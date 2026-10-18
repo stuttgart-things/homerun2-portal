@@ -32,7 +32,7 @@ require (
 )
 
 require (
-	dagger.io/dagger v0.20.8
+	dagger.io/dagger v0.21.10
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
