@@ -71,6 +71,14 @@ task build-test-binary    # unit tests + binary against a stub service via Dagge
 task build-scan-image-ko  # ko image + Trivy
 ```
 
+## Release
+
+Conventional commits on `main` drive semantic-release: after the image build
+on `main` succeeds, the `Release` workflow tags `vX.Y.Z`, publishes the
+GitHub release, stages the image and pushes the kustomize base to
+`ghcr.io/stuttgart-things/homerun2-portal-kustomize`. Same pipeline as the
+other homerun2 Go services.
+
 ## Deployment
 
 KCL manifests in `kcl/`; see `tests/kcl-deploy-profile.yaml`:
