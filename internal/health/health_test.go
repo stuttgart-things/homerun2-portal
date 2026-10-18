@@ -27,12 +27,12 @@ func TestCheckAll(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		fmt.Fprint(w, `{"status":"ok","version":"v1.8.0","commit":"0123456789abcdef"}`)
+		_, _ = fmt.Fprint(w, `{"status":"ok","version":"v1.8.0","commit":"0123456789abcdef"}`)
 	}))
 	defer up.Close()
 	failing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		fmt.Fprint(w, `{"status":"unhealthy","version":"v2.0.0"}`)
+		_, _ = fmt.Fprint(w, `{"status":"unhealthy","version":"v2.0.0"}`)
 	}))
 	defer failing.Close()
 	gone := httptest.NewServer(http.NotFoundHandler())

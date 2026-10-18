@@ -1,0 +1,28 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: homerun2-portal
+  description: Unified web frontend for homerun2 - portal shell with a reverse proxy in front of the service UIs
+  annotations:
+    github.com/project-slug: stuttgart-things/homerun2-portal
+    backstage.io/techdocs-ref: url:https://github.com/stuttgart-things/homerun2-portal/tree/main
+    backstage.io/source-location: url:https://github.com/stuttgart-things/homerun2-portal
+  tags:
+    - portal
+    - frontend
+    - htmx
+    - golang
+    - homerun2
+  links:
+    - url: https://github.com/stuttgart-things/homerun2-portal
+      title: GitHub Repository
+      icon: github
+spec:
+  type: website
+  lifecycle: experimental
+  owner: group:default/platform-team
+  system: homerun2
+  dependsOn:
+    - component:default/homerun2-led-catcher
+    - component:default/homerun2-core-catcher
