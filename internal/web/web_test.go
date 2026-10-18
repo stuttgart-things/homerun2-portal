@@ -18,7 +18,7 @@ import (
 func setup(t *testing.T) *http.ServeMux {
 	t.Helper()
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"status":"ok","version":"v1.8.0","commit":"abcdef0123"}`)
+		_, _ = fmt.Fprint(w, `{"status":"ok","version":"v1.8.0","commit":"abcdef0123"}`)
 	}))
 	t.Cleanup(backend.Close)
 	u, _ := url.Parse(backend.URL)
