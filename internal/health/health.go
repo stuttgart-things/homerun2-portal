@@ -104,7 +104,7 @@ func (c *Checker) check(ctx context.Context, s services.Service) Status {
 		st.Error = "unreachable"
 		return st
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	st.Latency = time.Since(start).Round(time.Millisecond).String()
 
 	var body struct {

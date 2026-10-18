@@ -28,7 +28,7 @@ func TestForwardsThePathUnchanged(t *testing.T) {
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
 		gotPrefix, gotHost = r.Header.Get("X-Forwarded-Prefix"), r.Header.Get("X-Forwarded-Host")
-		fmt.Fprint(w, "ok")
+		_, _ = fmt.Fprint(w, "ok")
 	}))
 	defer backend.Close()
 
@@ -39,7 +39,7 @@ func TestForwardsThePathUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if gotPath != "/led/api/events" || gotQuery != "limit=5" {
 		t.Errorf("backend saw %s?%s, want /led/api/events?limit=5", gotPath, gotQuery)
 	}
@@ -55,7 +55,7 @@ func TestStreamsServerSentEventsUnbuffered(t *testing.T) {
 	release := make(chan struct{})
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
-		fmt.Fprint(w, "event: events-update\ndata: first\n\n")
+		_, _ = fmt.Fprint(w, "event: events-update\ndata: first\n\n")
 		w.(http.Flusher).Flush()
 		<-release // the stream stays open, as an SSE stream does
 	}))
@@ -69,7 +69,7 @@ func TestStreamsServerSentEventsUnbuffered(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	line := make(chan string, 1)
 	go func() {

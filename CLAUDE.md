@@ -12,7 +12,7 @@ homerun2-portal — Go service that is the single web frontend for homerun2: a s
 - **Build**: ko (`.ko.yaml`), no Dockerfile
 - **CI**: Dagger modules (`dagger/main.go`), Taskfile
 - **Deploy**: KCL manifests (`kcl/`), Kubernetes
-- **Infra**: GitHub Actions, renovate
+- **Infra**: GitHub Actions, semantic-release, renovate
 
 No external Go dependencies — keep it that way unless there is a strong reason.
 
@@ -64,6 +64,9 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 - `static/homerun2.css` — design tokens (`--hr-*`) and portal layout; dark by default
 - `kcl/` — deployment manifests; `config.services` → `PORTAL_SERVICES`
 - `dagger/main.go` — Lint, Build, BuildImage, ScanImage, BuildAndTestBinary (against an nginx stub service)
+- `.github/workflows/` — `build-test` (Dagger), `build-scan-image` (ko image per PR and on main), `release` (semantic-release + kustomize OCI after a green image build on main)
+- `.releaserc`, `.goreleaser.yaml` — release config; versions come from conventional commits
+- `catalog-info.yaml` — Backstage component (system homerun2)
 
 ## Environment Variables
 

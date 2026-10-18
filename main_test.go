@@ -22,9 +22,9 @@ func TestMux(t *testing.T) {
 	led := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/health":
-			fmt.Fprint(w, `{"status":"ok","version":"v1.8.0"}`)
+			_, _ = fmt.Fprint(w, `{"status":"ok","version":"v1.8.0"}`)
 		case "/led/":
-			fmt.Fprint(w, `<body sse-connect="/led/api/events/stream">led simulator</body>`)
+			_, _ = fmt.Fprint(w, `<body sse-connect="/led/api/events/stream">led simulator</body>`)
 		default:
 			http.NotFound(w, r)
 		}
@@ -55,7 +55,7 @@ func TestMux(t *testing.T) {
 			t.Fatal(err)
 		}
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), want) {
 			t.Errorf("GET %s = %d, body lacks %q", path, resp.StatusCode, want)
 		}
@@ -67,7 +67,7 @@ func TestMux(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	if resp.StatusCode/100 != 3 || resp.Header.Get("Location") != "/led/" {
 		t.Errorf("GET /led = %d → %q, want a redirect to /led/", resp.StatusCode, resp.Header.Get("Location"))
 	}
