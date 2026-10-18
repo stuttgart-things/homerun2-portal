@@ -1,0 +1,89 @@
+// Package config loads the portal's configuration from the environment, once
+// at startup.
+package config
+
+import (
+	"fmt"
+	"log/slog"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/stuttgart-things/homerun2-portal/internal/services"
+)
+
+// Config is everything the portal reads from the environment.
+type Config struct {
+	Port           string
+	Services       []services.Service
+	HealthInterval time.Duration
+	HealthTimeout  time.Duration
+}
+
+// Load reads the environment. Invalid values are errors, not defaults: a
+// typo in PORTAL_SERVICES should stop the pod, not hide a service.
+func Load() (Config, error) {
+	svcs, err := services.Parse(os.Getenv("PORTAL_SERVICES"))
+	if err != nil {
+		return Config{}, err
+	}
+	interval, err := duration("HEALTH_INTERVAL", 10*time.Second)
+	if err != nil {
+		return Config{}, err
+	}
+	timeout, err := duration("HEALTH_TIMEOUT", 2*time.Second)
+	if err != nil {
+		return Config{}, err
+	}
+	return Config{
+		Port:           getEnv("PORT", "8080"),
+		Services:       svcs,
+		HealthInterval: interval,
+		HealthTimeout:  timeout,
+	}, nil
+}
+
+func duration(name string, def time.Duration) (time.Duration, error) {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return def, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil || d <= 0 {
+		return 0, fmt.Errorf("%s %q: want a positive Go duration such as 10s", name, raw)
+	}
+	return d, nil
+}
+
+func getEnv(name, def string) string {
+	if v := os.Getenv(name); v != "" {
+		return v
+	}
+	return def
+}
+
+// SetupLogging configures slog as the default logger from LOG_FORMAT and LOG_LEVEL.
+func SetupLogging() {
+	format := strings.ToLower(getEnv("LOG_FORMAT", "json"))
+
+	var level slog.Level
+	switch strings.ToLower(getEnv("LOG_LEVEL", "info")) {
+	case "debug":
+		level = slog.LevelDebug
+	case "warn":
+		level = slog.LevelWarn
+	case "error":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+
+	opts := &slog.HandlerOptions{Level: level}
+	var handler slog.Handler
+	if format == "text" {
+		handler = slog.NewTextHandler(os.Stdout, opts)
+	} else {
+		handler = slog.NewJSONHandler(os.Stdout, opts)
+	}
+	slog.SetDefault(slog.New(handler))
+}

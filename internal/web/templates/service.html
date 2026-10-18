@@ -1,0 +1,7 @@
+{{define "content"}}
+<main class="hr-main hr-embed">
+    {{/* Stage 1: the service's own page, embedded whole. Fragments
+         (/<key>/ui/fragment) replace the frame once the services offer them. */}}
+    <iframe class="hr-frame" src="{{.Current.Path}}/" title="{{.Current.Title}}"></iframe>
+</main>
+{{end}}

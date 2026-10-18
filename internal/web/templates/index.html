@@ -1,0 +1,31 @@
+{{define "content"}}
+<main class="hr-main">
+    {{if .Status}}
+    <div class="hr-grid">
+        {{range .Status}}
+        <section class="hr-card">
+            <h3><span class="hr-dot{{if .Checked}}{{if .Up}} up{{else}} down{{end}}{{end}}"></span>{{.Title}}</h3>
+            <dl>
+                <dt>Path</dt><dd>{{.Path}}/</dd>
+                <dt>Status</dt>
+                <dd>{{if not .Checked}}checking…{{else if .Up}}up{{else}}<span class="hr-error-text">{{.Error}}</span>{{end}}</dd>
+                {{if .Version}}<dt>Version</dt><dd>{{.Version}}{{if .Commit}} ({{.Commit}}){{end}}</dd>{{end}}
+                {{if .Latency}}<dt>Latency</dt><dd>{{.Latency}}</dd>{{end}}
+            </dl>
+            <div class="hr-actions">
+                <a class="hr-btn" href="/ui/{{.Key}}">Open</a>
+                <a class="hr-btn ghost" href="{{.Path}}/" target="_blank" rel="noopener">Standalone ↗</a>
+            </div>
+        </section>
+        {{end}}
+    </div>
+    {{else}}
+    <section class="hr-card hr-empty">
+        <h3>No services configured</h3>
+        <p>Set <code>PORTAL_SERVICES</code> to the services the portal fronts, e.g.</p>
+        <p><code>PORTAL_SERVICES=led=http://homerun2-led-catcher.homerun2.svc</code></p>
+        <p class="hr-muted">Each service is mounted under <code>/&lt;key&gt;/</code> and runs with <code>BASE_PATH=/&lt;key&gt;</code>.</p>
+    </section>
+    {{end}}
+</main>
+{{end}}

@@ -1,0 +1,32 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{if .Current}}{{.Current.Title}} · {{end}}homerun2 portal</title>
+    <link rel="stylesheet" href="/static/homerun2.css">
+    <script src="/static/htmx.min.js"></script>
+</head>
+<body>
+<div class="hr-shell">
+    <header class="hr-header">
+        <a class="hr-logo" href="/">HOMERUN²<small>PORTAL</small></a>
+        <div class="hr-status" id="hr-status" hx-get="/ui/status" hx-trigger="every {{.RefreshSeconds}}s" hx-swap="innerHTML">
+            {{template "status" .Status}}
+        </div>
+    </header>
+    <nav class="hr-nav" aria-label="Services">
+        <a href="/"{{if not .Current}} aria-current="page"{{end}}>Overview</a>
+        {{if .Services}}<h4>Services</h4>{{end}}
+        {{range .Services}}
+        <a href="/ui/{{.Key}}"{{if and $.Current (eq $.Current.Key .Key)}} aria-current="page"{{end}}>{{.Title}}<span class="hr-path">{{.Path}}</span></a>
+        {{end}}
+        <div class="hr-nav-foot">portal {{.Build.Version}} ({{.Build.Commit}})</div>
+    </nav>
+    {{template "content" .}}
+</div>
+</body>
+</html>
+{{end}}
+
+{{define "status"}}{{range .}}<a class="hr-pill" href="/ui/{{.Key}}" title="{{if .Error}}{{.Error}}{{else if .Checked}}up{{else}}not checked yet{{end}}"><span class="hr-dot{{if .Checked}}{{if .Up}} up{{else}} down{{end}}{{end}}"></span>{{.Title}}</a>{{end}}{{end}}

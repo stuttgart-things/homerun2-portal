@@ -1,0 +1,222 @@
+---
+version: 3
+includes:
+  git:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/git.yaml
+  lint:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/git/linting.yaml
+  go:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/lint.yaml
+  dagger:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/dagger/modules.yaml
+  image:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/docker/copy.yaml
+  goBuild:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/build.yaml
+  release:
+    taskfile: https://raw.githubusercontent.com/stuttgart-things/tasks/refs/heads/main/go/release-workflow.yaml
+
+vars:
+  PROJECT:
+    sh: basename $(pwd)
+  ORGA_NAME: stuttgart-things
+  GO_MODULE: github.com/{{ .ORGA_NAME }}/{{ .PROJECT }}
+  DAGGER_MODULE_DIR: ./dagger
+  SOURCE_CODE_DIR: "."
+  LINT_REPORT_PATH: /tmp/lint-report-{{ .PROJECT }}.txt
+  TEST_REPORT_PATH: /tmp/test-report-{{ .PROJECT }}.txt
+  TARGET_IMAGE_REPO: ghcr.io/{{ .ORGA_NAME }}/{{ .PROJECT }}
+  DAGGER_KCL_MODULE: github.com/stuttgart-things/dagger/kcl@v0.82.0
+  DAGGER_K8S_DEPLOY_MODULE: github.com/stuttgart-things/blueprints/kubernetes-deployment@v1.68.0
+  KUBECONFIG_PATH: ~/.kube/movie-scripts
+  DEPLOY_NAMESPACE: homerun2
+  KCL_SOURCE_DIR: kcl
+  KCL_PROFILE_FILE: tests/kcl-deploy-profile.yaml
+  RENDERED_OUTPUT_PATH: /tmp/rendered-{{ .PROJECT }}.yaml
+  KUSTOMIZE_BASE_EXPORT_PATH: /tmp/kustomize-base-{{ .PROJECT }}
+  KUSTOMIZE_OCI_REPO: ghcr.io/{{ .ORGA_NAME }}/{{ .PROJECT }}-kustomize
+
+tasks:
+  lint:
+    desc: Run Go lint via Dagger module
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MODULE_DIR }} lint \
+          --src "{{ .SOURCE_CODE_DIR }}" \
+          export --path={{ .LINT_REPORT_PATH }} \
+          --progress plain
+
+  build-test-binary:
+    desc: Build and test binary in front of a stub service via Dagger
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MODULE_DIR }} \
+        build-and-test-binary \
+        --source "{{ .SOURCE_CODE_DIR }}" \
+        export --path={{ .TEST_REPORT_PATH }} \
+        --progress plain -vv
+
+  build-output-binary:
+    desc: Build project binary
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_MODULE_DIR }} build \
+        --src "{{ .SOURCE_CODE_DIR }}" \
+        --bin-name="{{ .PROJECT }}" \
+        --progress plain -vv \
+        export --path=/tmp/go/build
+
+  build-scan-image-ko:
+    desc: Build, push and scan container image with ko
+    cmds:
+      - |
+        RANDOM_TAG=$(openssl rand -hex 6)
+        REPO_NAME="ttl.sh/{{ .PROJECT }}-${RANDOM_TAG}"
+        IMAGE_REF=$(dagger call -m {{ .DAGGER_MODULE_DIR }} build-image \
+          --src "{{ .SOURCE_CODE_DIR }}" \
+          --repo "$REPO_NAME" \
+          --push="true" \
+          --progress plain)
+        dagger call -m {{ .DAGGER_MODULE_DIR }} scan-image \
+          --image-ref "$IMAGE_REF" \
+          --severity "HIGH,CRITICAL" \
+          --progress plain \
+          export --path=/tmp/trivy-scan-{{ .PROJECT }}.json
+
+  run-local:
+    desc: Run the portal locally in front of local services (led-catcher on :8099 by default)
+    vars:
+      PORT: '{{ .PORT | default "8090" }}'
+      SERVICES: '{{ .SERVICES | default "led=http://localhost:8099" }}'
+    env:
+      PORT: "{{ .PORT }}"
+      PORTAL_SERVICES: "{{ .SERVICES }}"
+      LOG_FORMAT: text
+    cmds:
+      - go run .
+
+  test:
+    desc: Run unit tests
+    cmds:
+      - go test ./...
+
+  trigger-release:
+    desc: Trigger Release workflow on GitHub Actions
+    cmds:
+      - |
+        echo "Triggering Release workflow..."
+        gh workflow run Release
+        sleep 2
+        RUN_ID=$(gh run list --workflow=Release --limit=1 --json databaseId --jq '.[0].databaseId')
+        echo "Run: https://github.com/stuttgart-things/homerun2-portal/actions/runs/${RUN_ID}"
+        gh run watch "${RUN_ID}"
+
+  # === KCL Manifest Rendering ===
+
+  render-manifests:
+    desc: Render Kubernetes manifests using KCL via Dagger
+    vars:
+      SOURCE:
+        sh: 'gum input --placeholder "Source directory" --value "{{ .KCL_SOURCE_DIR }}" --header "KCL SOURCE DIRECTORY"'
+      PROFILE:
+        sh: 'gum input --placeholder "Profile file path" --value "{{ .KCL_PROFILE_FILE }}" --header "PARAMETERS FILE"'
+      DESTINATION:
+        sh: 'gum input --placeholder "Output path" --value "{{ .RENDERED_OUTPUT_PATH }}" --header "OUTPUT PATH"'
+    cmds:
+      - |
+        echo "Rendering manifests with KCL..."
+        echo "Source: {{ .SOURCE }}"
+        echo "Profile: {{ .PROFILE }}"
+        echo "Output: {{ .DESTINATION }}"
+
+        dagger call -m {{ .DAGGER_KCL_MODULE }} run \
+          --source "{{ .SOURCE }}" \
+          --parameters-file="{{ .PROFILE }}" \
+          export --path="{{ .DESTINATION }}"
+
+        echo "Manifests rendered: {{ .DESTINATION }}"
+        if [ -f "{{ .DESTINATION }}" ]; then
+          head -n 20 "{{ .DESTINATION }}"
+          echo "... (cat {{ .DESTINATION }} for full file)"
+        fi
+
+  render-manifests-quick:
+    desc: Render Kubernetes manifests (non-interactive, uses defaults)
+    vars:
+      SOURCE: '{{ .SOURCE | default .KCL_SOURCE_DIR }}'
+      PROFILE: '{{ .PROFILE | default .KCL_PROFILE_FILE }}'
+      DESTINATION: '{{ .DESTINATION | default .RENDERED_OUTPUT_PATH }}'
+    cmds:
+      - |
+        dagger call -m {{ .DAGGER_KCL_MODULE }} run \
+          --source "{{ .SOURCE }}" \
+          --parameters-file="{{ .PROFILE }}" \
+          export --path="{{ .DESTINATION }}"
+
+        echo "Manifests rendered: {{ .DESTINATION }}"
+
+  # === Kustomize Base Pipeline ===
+
+  render-kustomize-base:
+    desc: Render kustomize base from KCL deployment manifests
+    vars:
+      SOURCE: '{{ .SOURCE | default .KCL_SOURCE_DIR }}'
+      PROFILE: '{{ .PROFILE | default .KCL_PROFILE_FILE }}'
+      DESTINATION: '{{ .DESTINATION | default .KUSTOMIZE_BASE_EXPORT_PATH }}'
+    cmds:
+      - |
+        echo "Rendering kustomize base with KCL..."
+
+        dagger call -m {{ .DAGGER_KCL_MODULE }} render-kustomize-base \
+          --source "{{ .SOURCE }}" \
+          --parameters-file="{{ .PROFILE }}" \
+          export --path="{{ .DESTINATION }}" \
+          --progress plain
+
+        echo "Kustomize base rendered: {{ .DESTINATION }}"
+        ls -la "{{ .DESTINATION }}/"
+
+  push-kustomize-base:
+    desc: Render and push kustomize base as OCI artifact
+    vars:
+      SOURCE: '{{ .SOURCE | default .KCL_SOURCE_DIR }}'
+      PROFILE: '{{ .PROFILE | default .KCL_PROFILE_FILE }}'
+      TAG:
+        sh: 'gum input --placeholder "Enter version tag (e.g., v1.0.0)" --header "OCI TAG"'
+    cmds:
+      - |
+        echo "Pushing kustomize base as OCI artifact..."
+        echo "Target: {{ .KUSTOMIZE_OCI_REPO }}:{{ .TAG }}"
+
+        dagger call -m {{ .DAGGER_KCL_MODULE }} push-kustomize-base \
+          --source "{{ .SOURCE }}" \
+          --parameters-file="{{ .PROFILE }}" \
+          --address "{{ .KUSTOMIZE_OCI_REPO }}" \
+          --tag "{{ .TAG }}" \
+          --user env:GITHUB_USER \
+          --password env:GITHUB_TOKEN \
+          --progress plain
+
+        echo "OCI artifact pushed: {{ .KUSTOMIZE_OCI_REPO }}:{{ .TAG }}"
+
+  # === Release ===
+
+  release-local:
+    desc: Full release pipeline (local, interactive)
+    cmds:
+      - task: release:release-local
+        vars:
+          KCL_SOURCE_DIR: "{{ .KCL_SOURCE_DIR }}"
+          KCL_PROFILE_FILE: "{{ .KCL_PROFILE_FILE }}"
+          KUSTOMIZE_OCI_REPO: "{{ .KUSTOMIZE_OCI_REPO }}"
+          TARGET_IMAGE_REPO: "{{ .TARGET_IMAGE_REPO }}"
+
+  release-github:
+    desc: Full release pipeline (non-interactive, for CI)
+    cmds:
+      - task: release:release-github
+        vars:
+          KCL_SOURCE_DIR: "{{ .KCL_SOURCE_DIR }}"
+          KCL_PROFILE_FILE: "{{ .KCL_PROFILE_FILE }}"
+          KUSTOMIZE_OCI_REPO: "{{ .KUSTOMIZE_OCI_REPO }}"
+          TARGET_IMAGE_REPO: "{{ .TARGET_IMAGE_REPO }}"
