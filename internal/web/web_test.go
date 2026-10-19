@@ -104,3 +104,34 @@ func TestNoServicesExplainsTheConfiguration(t *testing.T) {
 		t.Error("an empty portal does not say how to configure it")
 	}
 }
+
+func TestIndexComposesTheServiceFragments(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/health":
+			_, _ = fmt.Fprint(w, `{"status":"ok"}`)
+		case "/led/ui/manifest.json":
+			_, _ = fmt.Fprint(w, `{"fragments":[{"id":"events","title":"Latest <events>","url":"/led/ui/fragment/events","refreshSeconds":5}]}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(backend.Close)
+	u, _ := url.Parse(backend.URL)
+	svcs := []services.Service{{Key: "led", Title: "LED Matrix", URL: u}}
+	checker := health.NewChecker(svcs, time.Second)
+	checker.CheckAll(context.Background())
+	mux := http.NewServeMux()
+	New(svcs, checker, BuildInfo{}, 10*time.Second).Register(mux)
+
+	body := get(t, mux, "/").Body.String()
+	for _, want := range []string{
+		`class="hr-card hr-card-wide"`,
+		`hx-get="/led/ui/fragment/events" hx-trigger="load, every 5s"`,
+		`Latest &lt;events&gt;`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("index lacks %s", want)
+		}
+	}
+}

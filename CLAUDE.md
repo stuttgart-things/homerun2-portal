@@ -50,6 +50,10 @@ Browser ──► mux ──┬── GET /, /ui/<key>, /ui/status, /api/service
 health.Checker ── polls <service>/health every HEALTH_INTERVAL ──► status shown by web
 ```
 
+### The fragment contract
+
+A service may offer `GET /<key>/ui/manifest.json` listing fragments (`id`, `title`, `url`, `refreshSeconds`). The overview loads each fragment into the service's card with htmx through the proxy. Fragments are bare HTML styled only by the `hr-*` classes in `static/homerun2.css`; see the README. Keep the URL checks in `validFragments`: a manifest must not be able to point the browser outside its service's prefix.
+
 ### The prefix contract
 
 The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`) and sets `X-Forwarded-Prefix`. Every service runs with `BASE_PATH=/<key>`, answers under it, and puts it on every URL it hands to the browser. `/health` stays at the service's root. Do not add prefix stripping to the proxy — a service that does not know its prefix hands out URLs without it.
@@ -60,6 +64,7 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 - `internal/services/registry.go` — `PORTAL_SERVICES` parsing, key rules, known titles
 - `internal/proxy/proxy.go` — per-service reverse proxy (unbuffered for SSE, 502 page)
 - `internal/health/health.go` — concurrent `/health` polling, status snapshot
+- `internal/health/manifest.go` — reads `/<key>/ui/manifest.json`, keeps only fragment URLs under the service's prefix
 - `internal/web/` — templates (`layout`, `index`, `service`, `status` partial) and handlers
 - `static/homerun2.css` — design tokens (`--hr-*`) and portal layout; dark by default
 - `kcl/` — deployment manifests; `config.services` → `PORTAL_SERVICES`

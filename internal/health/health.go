@@ -27,6 +27,9 @@ type Status struct {
 	Commit  string `json:"commit,omitempty"`
 	Latency string `json:"latency,omitempty"`
 	Error   string `json:"error,omitempty"`
+	// Fragments are the UI pieces the service offers in its manifest, empty
+	// for a service without one or while it is down.
+	Fragments []Fragment `json:"fragments,omitempty"`
 }
 
 // Checker keeps the latest Status of each service.
@@ -125,6 +128,7 @@ func (c *Checker) check(ctx context.Context, s services.Service) Status {
 		return st
 	}
 	st.Up = true
+	st.Fragments = c.manifest(ctx, s)
 	return st
 }
 

@@ -3,7 +3,7 @@
     {{if .Status}}
     <div class="hr-grid">
         {{range .Status}}
-        <section class="hr-card">
+        <section class="hr-card{{if .Fragments}} hr-card-wide{{end}}">
             <h3><span class="hr-dot{{if .Checked}}{{if .Up}} up{{else}} down{{end}}{{end}}"></span>{{.Title}}</h3>
             <dl>
                 <dt>Path</dt><dd>{{.Path}}/</dd>
@@ -12,6 +12,14 @@
                 {{if .Version}}<dt>Version</dt><dd>{{.Version}}{{if .Commit}} ({{.Commit}}){{end}}</dd>{{end}}
                 {{if .Latency}}<dt>Latency</dt><dd>{{.Latency}}</dd>{{end}}
             </dl>
+            {{range .Fragments}}
+            {{/* The service's own HTML, loaded through the proxy (same origin);
+                 manifest URLs are checked to stay under the service's prefix. */}}
+            <h4 class="hr-frag-title">{{.Title}}</h4>
+            <div class="hr-frag-slot" hx-get="{{.URL}}" hx-trigger="load{{if .RefreshSeconds}}, every {{.RefreshSeconds}}s{{end}}" hx-swap="innerHTML">
+                <span class="hr-muted">loading…</span>
+            </div>
+            {{end}}
             <div class="hr-actions">
                 <a class="hr-btn" href="/ui/{{.Key}}">Open</a>
                 <a class="hr-btn ghost" href="{{.Path}}/" target="_blank" rel="noopener">Standalone ↗</a>

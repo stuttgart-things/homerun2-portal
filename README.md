@@ -24,11 +24,45 @@ Server-sent events stream through the proxy unbuffered.
 1. **Shell** (this) — navigation, status from each service's `/health`,
    service UIs embedded whole.
 2. **`BASE_PATH` everywhere** — core-catcher, light-catcher, demo-pitcher.
-3. **Fragments** — services offer `/<key>/ui/fragment` and
-   `/<key>/ui/manifest.json`; the portal composes them with htmx instead of
-   embedding whole pages, and builds the navigation from the manifests.
+3. **Fragments** — services offer `/<key>/ui/manifest.json` and
+   `/<key>/ui/fragment/<id>`; the portal composes them on the overview
+   (see below). First: led-catcher's latest events. Next: the other services,
+   navigation from the manifests.
 4. **Shared theme** — services use the `--hr-*` tokens from
    `/static/homerun2.css` instead of their own copies of the palette.
+
+## Fragments (the micro-frontend contract)
+
+A service can put parts of its UI on the portal's overview. The portal reads
+`GET /<key>/ui/manifest.json` with every health check:
+
+```json
+{
+  "title": "LED Matrix",
+  "version": "v1.2.3",
+  "fragments": [
+    {"id": "events", "title": "Latest on the matrix",
+     "url": "/led/ui/fragment/events", "refreshSeconds": 5}
+  ]
+}
+```
+
+and loads each fragment into the service's card with htmx, through the proxy
+(`hx-get="/led/ui/fragment/events" hx-trigger="load, every 5s"`).
+
+A fragment:
+
+- is plain HTML without `<html>`/`<head>`/`<script>`,
+- is styled only by the portal's classes (`hr-frag`, `hr-list`, `hr-item`,
+  `hr-time`, `hr-dot`, `hr-sev hr-sev-{error,warning,success,info,debug}`,
+  `hr-system`, `hr-title`, `hr-frag-more`, `hr-muted` in
+  `static/homerun2.css`),
+- carries the prefix on every URL (it runs on the portal's origin), and
+- escapes everything that comes from messages.
+
+The portal only loads fragment URLs under the service's own prefix
+(`/<key>/…`, no `..`, no quotes), at most 4 per service, refreshed no faster
+than every 2 s. A service without a manifest just gets its status card.
 
 ## Configuration
 
