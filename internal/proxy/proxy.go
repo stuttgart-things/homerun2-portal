@@ -23,6 +23,12 @@ func New(svc services.Service) http.Handler {
 		Rewrite: func(r *httputil.ProxyRequest) {
 			r.SetURL(svc.URL)
 			r.SetXForwarded()
+			// The portal runs without TLS behind the gateway, so SetXForwarded
+			// says http. Pass the gateway's scheme on, so a service can still
+			// mark its cookies Secure; only the two real values are accepted.
+			if proto := r.In.Header.Get("X-Forwarded-Proto"); proto == "https" || proto == "http" {
+				r.Out.Header.Set("X-Forwarded-Proto", proto)
+			}
 			r.Out.Header.Set("X-Forwarded-Prefix", svc.Path())
 		},
 		FlushInterval: -1,
