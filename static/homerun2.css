@@ -197,6 +197,49 @@ a { color: inherit; }
 
 .hr-muted { color: var(--hr-muted); }
 
+/* ---- fragments ------------------------------------------------------ */
+/* Service UIs composed into the portal. A fragment (a service's
+   /<key>/ui/fragment/<id>) uses only these classes; see the README. */
+
+.hr-card-wide { grid-column: span 2; }
+.hr-frag-title {
+    margin: 4px 0 8px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--hr-muted);
+}
+.hr-frag-slot { margin-bottom: 14px; }
+.hr-frag { display: flex; flex-direction: column; gap: 8px; }
+.hr-frag-more { font-size: 12px; color: var(--hr-accent); text-decoration: none; }
+
+.hr-list { list-style: none; margin: 0; padding: 0; }
+.hr-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--hr-border) 50%, transparent);
+    font-size: 12px;
+    min-width: 0;
+}
+.hr-time, .hr-system { font-family: var(--hr-mono); color: var(--hr-muted); flex: none; }
+.hr-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.hr-sev {
+    flex: none;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--hr-info);
+    background: color-mix(in srgb, var(--hr-info) 18%, transparent);
+}
+.hr-sev-error { color: var(--hr-error); background: color-mix(in srgb, var(--hr-error) 18%, transparent); }
+.hr-sev-warning { color: var(--hr-warning); background: color-mix(in srgb, var(--hr-warning) 18%, transparent); }
+.hr-sev-success { color: var(--hr-ok); background: color-mix(in srgb, var(--hr-ok) 18%, transparent); }
+.hr-sev-debug { color: var(--hr-muted); background: color-mix(in srgb, var(--hr-muted) 18%, transparent); }
+
 /* ---- embedded service ----------------------------------------------- */
 
 .hr-frame { display: block; width: 100%; height: 100%; border: 0; background: var(--hr-bg); }
@@ -213,4 +256,5 @@ a { color: inherit; }
     .hr-nav h4, .hr-nav-foot { display: none; }
     .hr-main { padding: 16px; }
     .hr-main.hr-embed { height: 80vh; }
+    .hr-card-wide { grid-column: auto; }
 }
