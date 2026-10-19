@@ -51,6 +51,40 @@ func TestForwardsThePathUnchanged(t *testing.T) {
 	}
 }
 
+func TestForwardsTheGatewayScheme(t *testing.T) {
+	var got string
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Get("X-Forwarded-Proto")
+	}))
+	defer backend.Close()
+
+	front := httptest.NewServer(New(service(t, backend.URL)))
+	defer front.Close()
+
+	for _, tc := range []struct{ in, want string }{
+		{"https", "https"},
+		{"http", "http"},
+		{"", "http"},
+		{"javascript", "http"},
+	} {
+		req, err := http.NewRequest(http.MethodGet, front.URL+"/led/", http.NoBody)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if tc.in != "" {
+			req.Header.Set("X-Forwarded-Proto", tc.in)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		if got != tc.want {
+			t.Errorf("incoming X-Forwarded-Proto %q: service saw %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
 func TestStreamsServerSentEventsUnbuffered(t *testing.T) {
 	release := make(chan struct{})
 	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
