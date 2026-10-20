@@ -10,17 +10,20 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []struct{ key, title, url, path string }{
-		{"led", "LED Matrix", "http://led-catcher:8080", "/led"},
-		{"core", "Messages", "http://core-catcher", "/core"},
-		{"custom", "custom", "https://x.example", "/custom"},
+	want := []struct {
+		key, title, url, path string
+		titleSet              bool
+	}{
+		{"led", "LED Matrix", "http://led-catcher:8080", "/led", false},
+		{"core", "Messages", "http://core-catcher", "/core", true},
+		{"custom", "custom", "https://x.example", "/custom", false},
 	}
 	if len(got) != len(want) {
 		t.Fatalf("got %d services, want %d", len(got), len(want))
 	}
 	for i, w := range want {
 		s := got[i]
-		if s.Key != w.key || s.Title != w.title || s.URL.String() != w.url || s.Path() != w.path {
+		if s.Key != w.key || s.Title != w.title || s.URL.String() != w.url || s.Path() != w.path || s.TitleSet != w.titleSet {
 			t.Errorf("service %d = %s %q %s %s, want %s %q %s %s", i, s.Key, s.Title, s.URL, s.Path(), w.key, w.title, w.url, w.path)
 		}
 	}

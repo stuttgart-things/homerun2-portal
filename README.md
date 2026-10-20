@@ -26,8 +26,8 @@ Server-sent events stream through the proxy unbuffered.
 2. **`BASE_PATH` everywhere** — core-catcher, light-catcher, demo-pitcher.
 3. **Fragments** — services offer `/<key>/ui/manifest.json` and
    `/<key>/ui/fragment/<id>`; the portal composes them on the overview
-   (see below). First: led-catcher's latest events. Next: the other services,
-   navigation from the manifests.
+   (see below): led-catcher, core-catcher, light-catcher and demo-pitcher
+   offer one each; the navigation takes the services' titles from them.
 4. **Shared theme** — services use the `--hr-*` tokens from
    `/static/homerun2.css` instead of their own copies of the palette.
 
@@ -59,6 +59,11 @@ A fragment:
   `static/homerun2.css`),
 - carries the prefix on every URL (it runs on the portal's origin), and
 - escapes everything that comes from messages.
+
+The manifest's `title` names the service in the navigation, the header and
+on its card, unless `PORTAL_SERVICES` sets one (`key|Title=url`); the portal
+keeps the last one while the service is down. Its `version` is shown when the
+service's `/health` reports none.
 
 The portal only loads fragment URLs under the service's own prefix
 (`/<key>/…`, no `..`, no quotes), at most 4 per service, refreshed no faster

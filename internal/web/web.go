@@ -66,9 +66,10 @@ func (w *Web) Register(mux *http.ServeMux) {
 }
 
 type page struct {
-	Services       []services.Service
-	Status         []health.Status
-	Current        *services.Service
+	Status  []health.Status
+	Current *services.Service
+	// CurrentTitle names the current service as the navigation does.
+	CurrentTitle   string
 	Build          BuildInfo
 	RefreshSeconds int
 }
@@ -78,13 +79,18 @@ func (w *Web) page(current *services.Service) page {
 	if secs < 1 {
 		secs = 1
 	}
-	return page{
-		Services:       w.services,
+	p := page{
 		Status:         w.checker.Snapshot(),
 		Current:        current,
 		Build:          w.build,
 		RefreshSeconds: secs,
 	}
+	for _, st := range p.Status {
+		if current != nil && st.Key == current.Key {
+			p.CurrentTitle = st.Title
+		}
+	}
+	return p
 }
 
 // Index is the overview: one card per service.

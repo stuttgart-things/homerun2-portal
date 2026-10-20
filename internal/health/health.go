@@ -39,6 +39,9 @@ type Checker struct {
 
 	mu     sync.RWMutex
 	status map[string]Status
+	// titles are the last titles services gave in their manifests, so a
+	// service that goes down keeps its name in the navigation.
+	titles map[string]string
 }
 
 // NewChecker checks services with the given per-request timeout.
@@ -47,6 +50,7 @@ func NewChecker(svcs []services.Service, timeout time.Duration) *Checker {
 		services: svcs,
 		client:   &http.Client{Timeout: timeout},
 		status:   make(map[string]Status, len(svcs)),
+		titles:   make(map[string]string, len(svcs)),
 	}
 	for _, s := range svcs {
 		c.status[s.Key] = Status{Key: s.Key, Title: s.Title, Path: s.Path()}
@@ -95,7 +99,7 @@ func (c *Checker) Snapshot() []Status {
 }
 
 func (c *Checker) check(ctx context.Context, s services.Service) Status {
-	st := Status{Key: s.Key, Title: s.Title, Path: s.Path(), Checked: true}
+	st := Status{Key: s.Key, Title: c.title(s), Path: s.Path(), Checked: true}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.URL.String()+"/health", nil)
 	if err != nil {
 		st.Error = err.Error()
@@ -128,8 +132,33 @@ func (c *Checker) check(ctx context.Context, s services.Service) Status {
 		return st
 	}
 	st.Up = true
-	st.Fragments = c.manifest(ctx, s)
+	m := c.manifest(ctx, s)
+	st.Fragments = m.Fragments
+	if st.Version == "" {
+		st.Version = m.Version
+	}
+	if m.Title != "" && !s.TitleSet {
+		st.Title = m.Title
+		c.mu.Lock()
+		c.titles[s.Key] = m.Title
+		c.mu.Unlock()
+	}
 	return st
+}
+
+// title is what the service is called until its manifest says otherwise:
+// the title from PORTAL_SERVICES when set there, else the one its manifest
+// gave last, else the default for its key.
+func (c *Checker) title(s services.Service) string {
+	if s.TitleSet {
+		return s.Title
+	}
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if t := c.titles[s.Key]; t != "" {
+		return t
+	}
+	return s.Title
 }
 
 func shortCommit(c string) string {

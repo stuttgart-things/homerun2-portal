@@ -135,3 +135,36 @@ func TestIndexComposesTheServiceFragments(t *testing.T) {
 		}
 	}
 }
+
+func TestNavigationTakesTheManifestTitle(t *testing.T) {
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/health":
+			_, _ = fmt.Fprint(w, `{"status":"ok","version":"v1.2.0"}`)
+		case "/core/ui/manifest.json":
+			_, _ = fmt.Fprint(w, `{"title":"Core <Messages>"}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(backend.Close)
+	u, _ := url.Parse(backend.URL)
+	svcs := []services.Service{{Key: "core", Title: "Core Catcher", URL: u}}
+	checker := health.NewChecker(svcs, time.Second)
+	checker.CheckAll(context.Background())
+	mux := http.NewServeMux()
+	New(svcs, checker, BuildInfo{}, 10*time.Second).Register(mux)
+
+	body := get(t, mux, "/ui/core").Body.String()
+	for _, want := range []string{
+		`<title>Core &lt;Messages&gt; · homerun2 portal</title>`,
+		`href="/ui/core" aria-current="page" title="v1.2.0">Core &lt;Messages&gt;<span class="hr-path">/core</span>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("service page lacks %s", want)
+		}
+	}
+	if strings.Contains(body, "Core Catcher") {
+		t.Error("the default title is still shown")
+	}
+}
