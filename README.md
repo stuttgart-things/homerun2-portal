@@ -87,6 +87,26 @@ A service UI:
   in the portal reaches every service, and
 - builds its own colours on `var(--hr-…)` rather than on hex values.
 
+### Embedded header
+
+Inside the portal (`/ui/<key>` frames the service) the portal already shows
+the HOMERUN² brand and the service's name, so a service drops its banner and
+shows one compact line instead. Every service does it the same way:
+
+- a script at the top of `<head>` sets the class before the first paint:
+  `if (window.self !== window.top) document.documentElement.classList.add('hr-embedded')`
+- under `.hr-embedded` the header is one line, at least 44px high, padding
+  6px 16px, in `var(--hr-font)`, background `var(--hr-surface)`, a 1px
+  bottom border `var(--hr-border)`; no logo, gradient, accent line or outer
+  margin,
+- on the left the tool's subtitle (e.g. "Matrix simulator") in 13px
+  `var(--hr-muted)`, without the service name,
+- on the right the tool's stats and actions in 12px, as outlined badges
+  (`1px solid var(--hr-border)`) or plain links in `var(--hr-accent)`.
+
+Opened on its own, also through the overview's "Standalone" link, a service
+keeps its full header.
+
 ## Configuration
 
 | Variable | Default | Description |
