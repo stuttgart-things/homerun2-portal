@@ -42,13 +42,14 @@ func TestMux(t *testing.T) {
 	defer portal.Close()
 
 	for path, want := range map[string]string{
-		"/":                    "LED Matrix",
-		"/ui/led":              `src="/led/"`,
-		"/led/":                "led simulator",
-		"/health":              `"status":"healthy"`,
-		"/static/homerun2.css": "--hr-accent",
-		"/static/htmx.min.js":  "htmx",
-		"/api/services":        `"version":"v1.8.0"`,
+		"/":                           "LED Matrix",
+		"/ui/led":                     `src="/led/"`,
+		"/led/":                       "led simulator",
+		"/health":                     `"status":"healthy"`,
+		"/static/homerun2.css":        `@import url("homerun2-tokens.css")`,
+		"/static/homerun2-tokens.css": "--hr-accent:",
+		"/static/htmx.min.js":         "htmx",
+		"/api/services":               `"version":"v1.8.0"`,
 	} {
 		resp, err := http.Get(portal.URL + path)
 		if err != nil {
