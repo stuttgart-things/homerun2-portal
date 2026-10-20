@@ -138,7 +138,6 @@ func TestIndexComposesTheServiceFragments(t *testing.T) {
 
 	body := get(t, mux, "/").Body.String()
 	for _, want := range []string{
-		`class="hr-card hr-card-wide"`,
 		`hx-get="/led/ui/fragment/events" hx-trigger="load, every 5s"`,
 		`Latest &lt;events&gt;`,
 	} {

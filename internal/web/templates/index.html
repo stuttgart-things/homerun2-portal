@@ -3,7 +3,7 @@
     {{if .Status}}
     <div class="hr-grid">
         {{range .Status}}
-        <section class="hr-card{{if .Fragments}} hr-card-wide{{end}}">
+        <section class="hr-card">
             <h3><span class="hr-dot{{if .Checked}}{{if .Up}} up{{else}} down{{end}}{{end}}"></span>{{.Title}}</h3>
             <dl>
                 <dt>Path</dt><dd>{{.Path}}/</dd>
