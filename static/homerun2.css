@@ -8,7 +8,12 @@
 
 body {
     margin: 0;
-    background: var(--hr-bg);
+    /* A glow of the accent from the top right: brighter than the flat
+       background, and the cards stand out against it. */
+    background:
+        radial-gradient(1200px 700px at 85% -20%, color-mix(in srgb, var(--hr-accent-2) 22%, transparent), transparent 70%),
+        radial-gradient(900px 600px at 0% 110%, color-mix(in srgb, var(--hr-accent) 14%, transparent), transparent 70%),
+        var(--hr-bg);
     color: var(--hr-text);
     font: 14px/1.45 var(--hr-font);
 }
@@ -20,35 +25,39 @@ a { color: inherit; }
 .hr-shell {
     display: grid;
     grid-template-columns: 230px 1fr;
-    grid-template-rows: 56px 1fr;
+    grid-template-rows: 68px 1fr;
     height: 100vh;
 }
 
+/* The banner of the service UIs (core-catcher): accent gradient, an orange
+   line, HOMERUN² in the pixel font and the subtitle in amber. */
 .hr-header {
     grid-column: 1 / 3;
     display: flex;
     align-items: center;
     gap: 20px;
     padding: 0 20px;
-    background: var(--hr-surface);
-    border-bottom: 1px solid var(--hr-border);
+    background: linear-gradient(135deg, var(--hr-accent) 0%, var(--hr-accent-2) 100%);
+    border-bottom: 3px solid var(--hr-accent-3);
+    color: #f8fafc;
 }
 
 .hr-logo {
-    font: 700 19px var(--hr-mono);
-    letter-spacing: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font: 20px/1 var(--hr-pixel);
+    letter-spacing: 0.08em;
+    color: #fff;
+    text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.3);
     text-decoration: none;
-    background: linear-gradient(90deg, var(--hr-accent-2), var(--hr-accent), var(--hr-accent-3));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
 }
 
 .hr-logo small {
-    margin-left: 8px;
-    font-size: 11px;
-    letter-spacing: 1px;
-    -webkit-text-fill-color: var(--hr-muted);
+    font: 8px/1 var(--hr-pixel);
+    letter-spacing: 0.15em;
+    color: var(--hr-highlight);
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.3);
 }
 
 .hr-status { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
@@ -59,11 +68,13 @@ a { color: inherit; }
     gap: 6px;
     padding: 3px 10px;
     border-radius: 999px;
-    background: var(--hr-card);
-    border: 1px solid var(--hr-border);
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    color: #fff;
     font-size: 12px;
     text-decoration: none;
 }
+.hr-pill:hover { background: rgba(15, 23, 42, 0.55); }
 
 .hr-dot {
     width: 8px;
@@ -80,17 +91,17 @@ a { color: inherit; }
     flex-direction: column;
     gap: 2px;
     padding: 16px 10px;
-    background: var(--hr-surface);
+    background: color-mix(in srgb, var(--hr-surface) 85%, transparent);
     border-right: 1px solid var(--hr-border);
     overflow-y: auto;
 }
 
 .hr-nav h4 {
-    margin: 14px 10px 6px;
-    font-size: 10px;
-    letter-spacing: 1.5px;
+    margin: 16px 10px 8px;
+    font: 8px/1 var(--hr-pixel);
+    letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--hr-muted);
+    color: var(--hr-highlight);
 }
 
 .hr-nav a {
@@ -109,13 +120,27 @@ a { color: inherit; }
 }
 .hr-nav .hr-path { margin-left: auto; font: 11px var(--hr-mono); color: var(--hr-muted); }
 
+/* Build info and credit, as in the service UIs' build footer. */
 .hr-nav-foot {
     margin-top: auto;
-    padding: 10px;
+    padding: 12px 10px 4px;
     border-top: 1px solid var(--hr-border);
     font: 11px var(--hr-mono);
     color: var(--hr-muted);
 }
+.hr-nav-foot dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; margin: 0 0 12px; }
+.hr-nav-foot dt { color: #64748b; }
+.hr-nav-foot dd { margin: 0; color: #818cf8; overflow-wrap: anywhere; }
+.hr-nav .hr-credit {
+    padding: 0;
+    gap: 8px;
+    border: 0;
+    font: 11px var(--hr-font);
+    color: #64748b;
+}
+.hr-nav .hr-credit:hover { background: none; }
+.hr-credit b { font-weight: 400; color: #818cf8; }
+.hr-credit img { margin-left: auto; width: 28px; height: 28px; }
 
 .hr-main { overflow: auto; padding: 20px; }
 .hr-main.hr-embed { padding: 0; overflow: hidden; }
@@ -128,14 +153,26 @@ a { color: inherit; }
     gap: 16px;
 }
 
+/* Brighter than the background, with the accent line of the banners on top
+   and a hard pixel shadow. */
 .hr-card {
-    background: var(--hr-card);
-    border: 1px solid var(--hr-border);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--hr-card) 88%, #fff 12%), var(--hr-card) 140px);
+    border: 1px solid color-mix(in srgb, var(--hr-border) 70%, #fff 30%);
     border-radius: var(--hr-radius);
+    box-shadow: inset 0 3px 0 var(--hr-accent-2), 4px 4px 0 rgba(0, 0, 0, 0.35);
     padding: 16px;
 }
 
-.hr-card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 15px; }
+.hr-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 14px;
+    font: 11px/1.4 var(--hr-pixel);
+    letter-spacing: 0.05em;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
 .hr-card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0 0 14px; font-size: 12px; }
 .hr-card dt { color: var(--hr-muted); }
 .hr-card dd { margin: 0; font-family: var(--hr-mono); overflow-wrap: anywhere; }
@@ -152,7 +189,10 @@ a { color: inherit; }
     font-size: 12px;
     font-weight: 600;
     text-decoration: none;
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
 }
+.hr-btn:hover { background: var(--hr-accent-2); }
+.hr-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.35); }
 .hr-btn.ghost { background: transparent; border: 1px solid var(--hr-border); color: var(--hr-text); }
 
 .hr-empty { max-width: 640px; }
@@ -166,11 +206,11 @@ a { color: inherit; }
 
 .hr-card-wide { grid-column: span 2; }
 .hr-frag-title {
-    margin: 4px 0 8px;
-    font-size: 11px;
-    letter-spacing: 1px;
+    margin: 6px 0 10px;
+    font: 8px/1.4 var(--hr-pixel);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--hr-muted);
+    color: var(--hr-highlight);
 }
 .hr-frag-slot { margin-bottom: 14px; }
 .hr-frag { display: flex; flex-direction: column; gap: 8px; }

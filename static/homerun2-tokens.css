@@ -23,10 +23,14 @@
     --hr-info: #38bdf8;
     --hr-warning: #eab308;
     --hr-error: #ef4444;
+    /* The amber of the retro subtitles (HOMERUN² banners, section heads). */
+    --hr-highlight: #fbbf24;
 
     --hr-radius: 12px;
     --hr-font: system-ui, -apple-system, "Segoe UI", sans-serif;
     --hr-mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+    /* Pixel font of the HOMERUN² banners; a page using it loads Press Start 2P. */
+    --hr-pixel: "Press Start 2P", var(--hr-mono);
 
     color-scheme: dark;
 }

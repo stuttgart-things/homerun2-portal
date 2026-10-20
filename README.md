@@ -75,7 +75,10 @@ than every 2 s. A service without a manifest just gets its status card.
 `/static/homerun2-tokens.css` holds the homerun2 palette as custom properties
 (`--hr-bg`, `--hr-card`, `--hr-text`, `--hr-accent`, `--hr-error`, …) and
 nothing else, so a service page can load it without the portal's layout.
-`homerun2.css` imports it.
+`homerun2.css` imports it. `--hr-pixel` names the pixel font of the HOMERUN²
+banners (Press Start 2P, which a page loads itself) and `--hr-highlight` the
+amber of their subtitles; the portal's own header, section heads and card
+titles use both.
 
 A service UI:
 

@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{if .Current}}{{.CurrentTitle}} · {{end}}homerun2 portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/homerun2.css">
     <script src="/static/htmx.min.js"></script>
 </head>
@@ -22,7 +25,17 @@
         {{range .Status}}
         <a href="/ui/{{.Key}}"{{if and $.Current (eq $.Current.Key .Key)}} aria-current="page"{{end}}{{if .Version}} title="{{.Version}}"{{end}}>{{.Title}}<span class="hr-path">{{.Path}}</span></a>
         {{end}}
-        <div class="hr-nav-foot">portal {{.Build.Version}} ({{.Build.Commit}})</div>
+        <div class="hr-nav-foot">
+            <dl>
+                <dt>version</dt><dd>{{.Build.Version}}</dd>
+                {{with .Build.Commit}}<dt>commit</dt><dd>{{.}}</dd>{{end}}
+                {{with .Build.Date}}{{if ne . "unknown"}}<dt>built</dt><dd>{{.}}</dd>{{end}}{{end}}
+            </dl>
+            <a class="hr-credit" href="https://github.com/stuttgart-things" target="_blank" rel="noopener">
+                <span>a <b>stuttgart-things</b> project</span>
+                <img src="/static/sthings-logo.png" alt="sthings" width="28" height="28">
+            </a>
+        </div>
     </nav>
     {{template "content" .}}
 </div>
