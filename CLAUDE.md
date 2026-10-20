@@ -67,7 +67,8 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 - `internal/health/manifest.go` — reads `/<key>/ui/manifest.json`: title and version (cleaned to one line), and only fragment URLs under the service's prefix
 - `internal/web/` — templates (`layout`, `index`, `service`, `status` partial) and handlers
 - `static/homerun2-tokens.css` — design tokens (`--hr-*`) only, dark by default; service UIs link it behind the portal (README "Shared theme"), so keep rules out of it
-- `static/homerun2.css` — portal layout and the fragment `hr-*` classes; imports the tokens
+- `static/homerun2.css` — portal layout (retro banner look of the service UIs: accent gradient, `--hr-pixel` font) and the fragment `hr-*` classes; imports the tokens
+- `static/sthings-logo.png` — the stuttgart-things logo of the nav footer's credit (vendored, no request to GitHub)
 - `kcl/` — deployment manifests; `config.services` → `PORTAL_SERVICES`
 - `dagger/main.go` — Lint, Build, BuildImage, ScanImage, BuildAndTestBinary (against an nginx stub service)
 - `.github/workflows/` — `build-test` (Dagger), `build-scan-image` (ko image per PR and on main), `release` (semantic-release + kustomize OCI after a green image build on main)

@@ -29,7 +29,7 @@ func setup(t *testing.T) *http.ServeMux {
 	checker := health.NewChecker(svcs, time.Second)
 	checker.CheckAll(context.Background())
 	mux := http.NewServeMux()
-	New(svcs, checker, BuildInfo{Version: "v0.1.0", Commit: "0123456789"}, 10*time.Second).Register(mux)
+	New(svcs, checker, BuildInfo{Version: "v0.1.0", Commit: "0123456789", Date: "2026-10-20T06:56:56Z"}, 10*time.Second).Register(mux)
 	return mux
 }
 
@@ -48,11 +48,23 @@ func TestIndexListsEveryService(t *testing.T) {
 	body := rec.Body.String()
 	for _, want := range []string{
 		`href="/ui/led"`, `href="/led/"`, `href="/ui/core"`, "v1.8.0", "(abcdef0)",
-		`hx-get="/ui/status" hx-trigger="every 10s"`, "portal v0.1.0 (0123456)",
+		`hx-get="/ui/status" hx-trigger="every 10s"`,
+		"<dt>version</dt><dd>v0.1.0</dd>", "<dt>commit</dt><dd>0123456</dd>",
+		"<dt>built</dt><dd>2026-10-20T06:56:56Z</dd>", `src="/static/sthings-logo.png"`,
 		"Core &lt;Catcher&gt;", // titles come from configuration and are escaped
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("index lacks %q", want)
+		}
+	}
+}
+
+func TestNavFootLeavesOutAnUnknownBuildDate(t *testing.T) {
+	for _, date := range []string{"", "unknown"} {
+		mux := http.NewServeMux()
+		New(nil, health.NewChecker(nil, time.Second), BuildInfo{Version: "dev", Date: date}, time.Second).Register(mux)
+		if body := get(t, mux, "/").Body.String(); strings.Contains(body, "<dt>built</dt>") {
+			t.Errorf("date %q: the nav foot shows a build date", date)
 		}
 	}
 }
