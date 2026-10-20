@@ -212,6 +212,7 @@ a { color: inherit; }
 .hr-frag-slot { margin-bottom: 14px; }
 .hr-frag { display: flex; flex-direction: column; gap: 8px; }
 .hr-frag-more { font-size: 12px; color: var(--hr-accent); text-decoration: none; }
+.hr-frag > .hr-muted { font-size: 12px; }
 
 .hr-list { list-style: none; margin: 0; padding: 0; }
 .hr-item {

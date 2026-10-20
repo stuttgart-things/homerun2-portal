@@ -18,6 +18,10 @@ type Service struct {
 	Key string `json:"key"`
 	// Title is shown in the navigation and on the overview.
 	Title string `json:"title"`
+	// TitleSet is true when PORTAL_SERVICES names the title (key|Title). A
+	// title that is not set may be replaced by the one in the service's
+	// manifest.
+	TitleSet bool `json:"-"`
 	// URL is where the portal reaches the service, e.g. the cluster Service.
 	URL *url.URL `json:"-"`
 }
@@ -85,6 +89,7 @@ func Parse(raw string) ([]Service, error) {
 			return nil, fmt.Errorf("PORTAL_SERVICES %s: URL %q must not have a path", key, target)
 		}
 		u.Path = ""
+		titleSet := title != ""
 		if title == "" {
 			title = knownTitles[key]
 		}
@@ -92,7 +97,7 @@ func Parse(raw string) ([]Service, error) {
 			title = key
 		}
 		seen[key] = true
-		out = append(out, Service{Key: key, Title: title, URL: u})
+		out = append(out, Service{Key: key, Title: title, TitleSet: titleSet, URL: u})
 	}
 	return out, nil
 }

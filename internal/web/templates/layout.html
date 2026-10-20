@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{if .Current}}{{.Current.Title}} · {{end}}homerun2 portal</title>
+    <title>{{if .Current}}{{.CurrentTitle}} · {{end}}homerun2 portal</title>
     <link rel="stylesheet" href="/static/homerun2.css">
     <script src="/static/htmx.min.js"></script>
 </head>
@@ -17,9 +17,10 @@
     </header>
     <nav class="hr-nav" aria-label="Services">
         <a href="/"{{if not .Current}} aria-current="page"{{end}}>Overview</a>
-        {{if .Services}}<h4>Services</h4>{{end}}
-        {{range .Services}}
-        <a href="/ui/{{.Key}}"{{if and $.Current (eq $.Current.Key .Key)}} aria-current="page"{{end}}>{{.Title}}<span class="hr-path">{{.Path}}</span></a>
+        {{if .Status}}<h4>Services</h4>{{end}}
+        {{/* Titles come from the status: a service's manifest may name it. */}}
+        {{range .Status}}
+        <a href="/ui/{{.Key}}"{{if and $.Current (eq $.Current.Key .Key)}} aria-current="page"{{end}}{{if .Version}} title="{{.Version}}"{{end}}>{{.Title}}<span class="hr-path">{{.Path}}</span></a>
         {{end}}
         <div class="hr-nav-foot">portal {{.Build.Version}} ({{.Build.Commit}})</div>
     </nav>
