@@ -1,45 +1,8 @@
 /*
- * homerun2 design tokens and portal layout.
- *
- * The services behind the portal are meant to use the tokens below
- * (--hr-*) instead of their own copies of the palette, so the pages look
- * like one product. Load it from the portal: /static/homerun2.css.
+ * homerun2 portal layout, on the shared design tokens (--hr-*) in
+ * homerun2-tokens.css. Fragments use the hr-* classes below.
  */
-:root {
-    --hr-bg: #0b1120;
-    --hr-surface: #111827;
-    --hr-card: #1e293b;
-    --hr-border: #334155;
-    --hr-text: #e2e8f0;
-    --hr-muted: #94a3b8;
-
-    --hr-accent: #6366f1;
-    --hr-accent-2: #a855f7;
-    --hr-accent-3: #f97316;
-
-    --hr-ok: #22c55e;
-    --hr-info: #38bdf8;
-    --hr-warning: #eab308;
-    --hr-error: #ef4444;
-
-    --hr-radius: 12px;
-    --hr-font: system-ui, -apple-system, "Segoe UI", sans-serif;
-    --hr-mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
-
-    color-scheme: dark;
-}
-
-/* Dark is the default: every service UI is dark-only so far, and a light
-   portal around a dark frame looks broken. Light is opt-in until they follow. */
-:root[data-theme="light"] {
-    --hr-bg: #f1f5f9;
-    --hr-surface: #ffffff;
-    --hr-card: #ffffff;
-    --hr-border: #cbd5e1;
-    --hr-text: #0f172a;
-    --hr-muted: #475569;
-    color-scheme: light;
-}
+@import url("homerun2-tokens.css");
 
 * { box-sizing: border-box; }
 
