@@ -32,12 +32,13 @@ func (s Service) Path() string { return "/" + s.Key }
 // knownTitles names the homerun2 services by their usual keys. A key not
 // listed here is shown as is.
 var knownTitles = map[string]string{
-	"led":   "LED Matrix",
-	"core":  "Core Catcher",
-	"light": "Light Catcher",
-	"wled":  "WLED Mock",
-	"pitch": "Demo Pitcher",
-	"omni":  "Omni Pitcher",
+	"led":    "LED Matrix",
+	"core":   "Core Catcher",
+	"light":  "Light Catcher",
+	"wled":   "WLED Mock",
+	"pitch":  "Demo Pitcher",
+	"omni":   "Omni Pitcher",
+	"notify": "Notification Catcher",
 }
 
 // reserved are the portal's own top-level paths; a service mounted on one
