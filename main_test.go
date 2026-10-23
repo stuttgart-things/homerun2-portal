@@ -50,6 +50,9 @@ func TestMux(t *testing.T) {
 		"/static/homerun2-tokens.css": "--hr-accent:",
 		"/static/htmx.min.js":         "htmx",
 		"/api/services":               `"version":"v1.8.0"`,
+		"/kiosk":                      `data-url="/led/"`,
+		"/kiosk/overview":             `class="hr-bare"`,
+		"/static/kiosk.js":            "/api/services",
 	} {
 		resp, err := http.Get(portal.URL + path)
 		if err != nil {

@@ -1,5 +1,5 @@
 // Package web serves the portal's own pages: the overview, a page per
-// service, and the status pills the header refreshes.
+// service, the kiosk, and the status pills the header refreshes.
 package web
 
 import (
@@ -35,6 +35,7 @@ type Web struct {
 
 	index   *template.Template
 	service *template.Template
+	kiosk   *template.Template
 }
 
 // New parses the templates; refresh is how often the header re-reads the status.
@@ -52,8 +53,9 @@ func New(svcs []services.Service, checker *health.Checker, build BuildInfo, refr
 		checker:  checker,
 		build:    build,
 		refresh:  refresh,
-		index:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/index.html")),
+		index:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/index.html", "templates/bare.html")),
 		service:  template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/service.html")),
+		kiosk:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/kiosk.html")),
 	}
 }
 
@@ -63,6 +65,8 @@ func (w *Web) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /ui/status", w.StatusPartial)
 	mux.HandleFunc("GET /ui/{key}", w.Service)
 	mux.HandleFunc("GET /api/services", w.APIServices)
+	mux.HandleFunc("GET /kiosk", w.Kiosk)
+	mux.HandleFunc("GET /kiosk/overview", w.KioskOverview)
 }
 
 type page struct {
