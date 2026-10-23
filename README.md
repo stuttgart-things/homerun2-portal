@@ -8,6 +8,7 @@ service UI, so everything lives under one hostname:
 Browser ──► homerun2-portal
               ├── /             overview: one card per service, live status
               ├── /ui/<key>     a service's UI inside the portal shell
+              ├── /kiosk        the services full screen, one after another
               ├── /led/*   ──►  homerun2-led-catcher   (BASE_PATH=/led)
               ├── /core/*  ──►  homerun2-core-catcher  (BASE_PATH=/core)
               └── …
@@ -124,7 +125,8 @@ keeps its full header.
 Known keys get a title: `led` LED Matrix, `core` Core Catcher, `light` Light
 Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher, `notify`
 Notification Catcher.
-`api`, `health`, `static` and `ui` are the portal's own and cannot be keys.
+`api`, `health`, `kiosk`, `static` and `ui` are the portal's own and cannot be
+keys, nor can `overview` (it names the overview in `/kiosk?services=`).
 
 ## Endpoints
 
@@ -132,12 +134,40 @@ Notification Catcher.
 |------|-|
 | `/` | Overview |
 | `/ui/<key>` | A service inside the portal |
+| `/kiosk` | Kiosk: the services full screen, one after another (see below) |
+| `/kiosk/overview` | The overview's cards without header and navigation |
 | `/ui/status` | Status pills (htmx partial) |
 | `/api/services` | Service status as JSON |
 | `/health` | The portal's own health and build info |
 | `/static/homerun2.css` | Portal layout and fragment classes |
 | `/static/homerun2-tokens.css` | Design tokens only, for the service UIs |
 | `/<key>/…` | Proxied to the service |
+
+## Kiosk
+
+`/kiosk` is for an office display (the sthings-edge box): a slim banner with
+the current service, the status pills and a progress bar, below it one
+service UI full screen. It switches to the next service every `seconds`,
+skips services that are down (the overview never is), and holds the current
+one while someone uses keyboard, mouse or touch, also inside the service UI.
+At most two frames exist — the one shown and the next one loading — so the
+switch never shows a blank page and the event streams of hidden UIs do not
+pile up.
+
+```
+/kiosk?services=overview,core,led&seconds=30&pause=60&reset=300&zoom=led:130
+```
+
+| Parameter | Default | |
+|-----------|---------|-|
+| `services` | every service, in navigation order | Comma-separated keys; `overview` is the overview |
+| `seconds` | `30` | Per service; `0` stays on the first |
+| `pause` | `60` | No switch within N s after input; `0` is off |
+| `reset` | `0` (off) | Reload the kiosk N s after the last input: back to the first service |
+| `zoom` | `100` | Percent: `130` for every service, `led:130,core:80` per service |
+
+Seconds are `0` or 5 (`pause`, `reset`: 1) to 86400, zoom 25 to 400; anything
+else, or an unknown key, is a 400 that says why.
 
 ## Development
 

@@ -1,0 +1,39 @@
+{{define "kiosk"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kiosk · homerun2 portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/homerun2.css">
+    <script src="/static/htmx.min.js"></script>
+    <script src="/static/kiosk.js" defer></script>
+</head>
+<body>
+<div class="hr-kiosk" id="hr-kiosk" data-seconds="{{.Seconds}}" data-pause="{{.Pause}}" data-reset="{{.Reset}}" data-refresh="{{.RefreshSeconds}}">
+    <header class="hr-kiosk-header">
+        <a class="hr-logo" href="/">HOMERUN²<small>KIOSK</small></a>
+        <div class="hr-kiosk-now">
+            <span class="hr-kiosk-title" id="hr-kiosk-title">{{with .Slides}}{{(index . 0).Title}}{{end}}</span>
+            <span class="hr-kiosk-count" id="hr-kiosk-count"></span>
+        </div>
+        <div class="hr-status" hx-get="/ui/status" hx-trigger="every {{.RefreshSeconds}}s" hx-swap="innerHTML">
+            {{template "status" .Status}}
+        </div>
+        <div class="hr-kiosk-progress"><span id="hr-kiosk-bar"></span></div>
+    </header>
+    {{/* kiosk.js shows these one after another, skipping services that are
+         down, with at most two frames: the one shown and the next loading. */}}
+    <ul class="hr-kiosk-slides" hidden>
+        {{range .Slides}}<li data-key="{{.Key}}" data-title="{{.Title}}" data-url="{{.URL}}" data-zoom="{{.Zoom}}"></li>
+        {{end}}
+    </ul>
+    <main class="hr-kiosk-stage" id="hr-kiosk-stage">
+        {{if not .Slides}}<section class="hr-card hr-empty"><h3>Nothing to show</h3><p>No services configured: set <code>PORTAL_SERVICES</code>.</p></section>{{end}}
+    </main>
+</div>
+</body>
+</html>
+{{end}}

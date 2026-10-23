@@ -42,9 +42,10 @@ var knownTitles = map[string]string{
 }
 
 // reserved are the portal's own top-level paths; a service mounted on one
-// would shadow the portal or be shadowed by it.
+// would shadow the portal or be shadowed by it. "overview" is not a path but
+// names the overview in /kiosk?services=.
 var reserved = map[string]bool{
-	"api": true, "health": true, "static": true, "ui": true,
+	"api": true, "health": true, "kiosk": true, "overview": true, "static": true, "ui": true,
 }
 
 var keyPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)

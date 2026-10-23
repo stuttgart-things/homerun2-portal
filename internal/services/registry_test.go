@@ -43,6 +43,8 @@ func TestParseRejects(t *testing.T) {
 		"LED=http://a":                    "lowercase",
 		"../x=http://a":                   "lowercase",
 		"static=http://a":                 "reserved",
+		"kiosk=http://a":                  "reserved",
+		"overview=http://a":               "reserved",
 		"led=http://a,led=http://b":       "listed twice",
 		"led=ftp://a":                     "not an http(s) URL",
 		"led=a:8080":                      "not an http(s) URL",

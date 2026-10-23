@@ -42,7 +42,8 @@ No external Go dependencies — keep it that way unless there is a strong reason
 ## Architecture
 
 ```
-Browser ──► mux ──┬── GET /, /ui/<key>, /ui/status, /api/services   (internal/web)
+Browser ──► mux ──┬── GET /, /ui/<key>, /ui/status, /api/services,  (internal/web)
+                  │       /kiosk, /kiosk/overview
                   ├── GET /health                                   (internal/handlers)
                   ├── GET /static/                                  (static/, embedded)
                   └── /<key>/…  ──► ReverseProxy ──► service         (internal/proxy)
@@ -65,7 +66,8 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 - `internal/proxy/proxy.go` — per-service reverse proxy (unbuffered for SSE, 502 page)
 - `internal/health/health.go` — concurrent `/health` polling, status snapshot
 - `internal/health/manifest.go` — reads `/<key>/ui/manifest.json`: title and version (cleaned to one line), and only fragment URLs under the service's prefix
-- `internal/web/` — templates (`layout`, `index`, `service`, `status` partial) and handlers
+- `internal/web/` — templates (`layout`, `index`, `service`, `status` partial, `bare`, `kiosk`) and handlers
+- `internal/web/kiosk.go`, `static/kiosk.js` — `/kiosk`: query options (checked server-side, 400 on anything unknown) and the rotation in the browser (skips down services, at most two iframes, input pauses)
 - `static/homerun2-tokens.css` — design tokens (`--hr-*`) only, dark by default; service UIs link it behind the portal (README "Shared theme"), so keep rules out of it
 - `static/homerun2.css` — portal layout (retro banner look of the service UIs: accent gradient, `--hr-pixel` font) and the fragment `hr-*` classes; imports the tokens
 - `static/sthings-logo.png` — the stuttgart-things logo of the nav footer's credit (vendored, no request to GitHub)
