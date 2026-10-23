@@ -6,7 +6,7 @@ import (
 )
 
 func TestParse(t *testing.T) {
-	got, err := Parse(" led=http://led-catcher:8080 , core|Messages=http://core-catcher/,custom=https://x.example ")
+	got, err := Parse(" led=http://led-catcher:8080 , core|Messages=http://core-catcher/,notify=http://homerun2-notification-catcher,custom=https://x.example ")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -16,6 +16,7 @@ func TestParse(t *testing.T) {
 	}{
 		{"led", "LED Matrix", "http://led-catcher:8080", "/led", false},
 		{"core", "Messages", "http://core-catcher", "/core", true},
+		{"notify", "Notification Catcher", "http://homerun2-notification-catcher", "/notify", false},
 		{"custom", "custom", "https://x.example", "/custom", false},
 	}
 	if len(got) != len(want) {

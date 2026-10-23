@@ -26,8 +26,8 @@ Server-sent events stream through the proxy unbuffered.
 2. **`BASE_PATH` everywhere** — core-catcher, light-catcher, demo-pitcher.
 3. **Fragments** — services offer `/<key>/ui/manifest.json` and
    `/<key>/ui/fragment/<id>`; the portal composes them on the overview
-   (see below): led-catcher, core-catcher, light-catcher and demo-pitcher
-   offer one each; the navigation takes the services' titles from them.
+   (see below): led-catcher, core-catcher, light-catcher, demo-pitcher and
+   notification-catcher offer one each; the navigation takes the services' titles from them.
 4. **Shared theme** — services use the `--hr-*` tokens from
    `/static/homerun2-tokens.css` instead of their own palettes (see below).
    First: led-catcher.
@@ -122,7 +122,8 @@ keeps its full header.
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 
 Known keys get a title: `led` LED Matrix, `core` Core Catcher, `light` Light
-Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher.
+Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher, `notify`
+Notification Catcher.
 `api`, `health`, `static` and `ui` are the portal's own and cannot be keys.
 
 ## Endpoints
