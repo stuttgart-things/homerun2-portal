@@ -1,5 +1,5 @@
 """
-Common labels for homerun2-portal resources
+Common labels for sthings-portal resources
 """
 
 import schema

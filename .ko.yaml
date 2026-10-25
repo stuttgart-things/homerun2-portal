@@ -1,6 +1,6 @@
 defaultBaseImage: cgr.dev/chainguard/static:latest
 builds:
-  - id: homerun2-portal
+  - id: sthings-portal
     main: .
     flags:
       - -trimpath

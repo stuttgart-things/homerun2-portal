@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/config"
-	"github.com/stuttgart-things/homerun2-portal/internal/health"
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
-	"github.com/stuttgart-things/homerun2-portal/internal/web"
+	"github.com/stuttgart-things/sthings-portal/internal/config"
+	"github.com/stuttgart-things/sthings-portal/internal/health"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/web"
 )
 
 // TestMux runs the portal in front of a fake led-catcher served under

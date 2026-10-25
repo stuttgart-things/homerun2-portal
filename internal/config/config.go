@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
 // Config is everything the portal reads from the environment.

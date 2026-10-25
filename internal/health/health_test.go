@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
 func svc(t *testing.T, key, raw string) services.Service {

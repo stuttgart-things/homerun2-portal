@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
 // Status is the last known state of one service.

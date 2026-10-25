@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
 // New returns a reverse proxy for svc.

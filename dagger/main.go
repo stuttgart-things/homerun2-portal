@@ -1,4 +1,4 @@
-// Dagger CI module for homerun2-portal
+// Dagger CI module for sthings-portal
 //
 // Provides build, lint, test, image build, and security scanning functions.
 // Delegates to external stuttgart-things Dagger modules where possible.
@@ -61,7 +61,7 @@ func (m *Dagger) BuildImage(
 	ctx context.Context,
 	src *dagger.Directory,
 	// +optional
-	// +default="ko.local/homerun2-portal"
+	// +default="ko.local/sthings-portal"
 	repo string,
 	// +optional
 	// +default="false"

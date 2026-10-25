@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/health"
+	"github.com/stuttgart-things/sthings-portal/internal/health"
 )
 
 // overviewKey names the overview among the kiosk's services.

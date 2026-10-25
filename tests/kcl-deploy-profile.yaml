@@ -1,9 +1,9 @@
 ---
-config.image: ghcr.io/stuttgart-things/homerun2-portal:latest
+config.image: ghcr.io/stuttgart-things/sthings-portal:latest
 config.namespace: homerun2
 config.services:
   - led=http://homerun2-led-catcher.homerun2.svc.cluster.local
 config.httpRouteEnabled: true
 config.httpRouteParentRefName: homerun2-dev-gateway
 config.httpRouteParentRefNamespace: default
-config.httpRouteHostname: homerun2-portal.example.com
+config.httpRouteHostname: sthings-portal.example.com

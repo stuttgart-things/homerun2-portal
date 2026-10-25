@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
 // Fragment is one piece of a service's UI the portal composes into its own

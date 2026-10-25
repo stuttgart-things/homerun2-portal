@@ -1,5 +1,5 @@
 """
-Deployment for homerun2-portal
+Deployment for sthings-portal
 """
 
 import labels
