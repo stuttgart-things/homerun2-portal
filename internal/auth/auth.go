@@ -4,8 +4,9 @@
 // (user:$2y$…, optionally :group,group), keeps the login in a signed cookie,
 // and hands the identity to the services behind the portal as
 // X-Forwarded-User / X-Forwarded-Groups — after stripping whatever the
-// client sent under those names. OIDC (Zitadel) follows as a second mode;
-// the module it needs is allowed here only (ADR 0001).
+// client sent under those names. AUTH_MODE=oidc logs in at an OIDC provider
+// (Zitadel) and keeps the users file as an emergency access next to it. The
+// modules this needs are allowed here only (ADR 0001).
 package auth
 
 import (
@@ -28,6 +29,7 @@ import (
 const (
 	ModeNone  = "none"
 	ModeLocal = "local"
+	ModeOIDC  = "oidc"
 )
 
 // The identity headers the portal sets for the services; a client's own
@@ -46,6 +48,8 @@ type Config struct {
 	UsersFile  string
 	SessionKey string
 	SessionTTL time.Duration
+	// OIDC is used with AUTH_MODE=oidc.
+	OIDC OIDCConfig
 }
 
 // User is one entry of the users file.
@@ -64,17 +68,20 @@ type Auth struct {
 	// long for a name that does not exist as for a wrong password.
 	dummy []byte
 	now   func() time.Time
+	// oidc is set with AUTH_MODE=oidc.
+	oidc *oidcClient
 }
 
 // New builds the authenticator; nil (and no error) for AUTH_MODE=none.
 // Anything invalid is an error, so the pod does not start half-protected.
 func New(cfg Config) (*Auth, error) {
-	switch strings.ToLower(strings.TrimSpace(cfg.Mode)) {
+	mode := strings.ToLower(strings.TrimSpace(cfg.Mode))
+	switch mode {
 	case "", ModeNone:
 		return nil, nil
-	case ModeLocal:
+	case ModeLocal, ModeOIDC:
 	default:
-		return nil, fmt.Errorf("AUTH_MODE %q: want none or local", cfg.Mode)
+		return nil, fmt.Errorf("AUTH_MODE %q: want none, local or oidc", cfg.Mode)
 	}
 	if len(cfg.SessionKey) < MinSessionKey {
 		return nil, fmt.Errorf("AUTH_SESSION_KEY: at least %d bytes needed, got %d", MinSessionKey, len(cfg.SessionKey))
@@ -82,16 +89,33 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.SessionTTL <= 0 {
 		cfg.SessionTTL = 12 * time.Hour
 	}
-	users, err := LoadUsers(cfg.UsersFile)
-	if err != nil {
-		return nil, err
+	a := &Auth{users: map[string]User{}, key: []byte(cfg.SessionKey), ttl: cfg.SessionTTL, now: time.Now}
+	if mode == ModeOIDC {
+		c, err := newOIDCClient(cfg.OIDC)
+		if err != nil {
+			return nil, err
+		}
+		a.oidc = c
+	}
+	// With oidc the users file is the emergency access for when the provider
+	// is down or misconfigured; it may be left out, the KCL manifests do not.
+	if mode == ModeLocal || cfg.UsersFile != "" {
+		users, err := LoadUsers(cfg.UsersFile)
+		if err != nil {
+			return nil, err
+		}
+		a.users = users
 	}
 	dummy, err := bcrypt.GenerateFromPassword([]byte("not a password"), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
-	return &Auth{users: users, key: []byte(cfg.SessionKey), ttl: cfg.SessionTTL, dummy: dummy, now: time.Now}, nil
+	a.dummy = dummy
+	return a, nil
 }
+
+// LocalEnabled tells the login page to show the user/password form.
+func (a *Auth) LocalEnabled() bool { return len(a.users) > 0 }
 
 // LoadUsers reads the users file: one "name:bcrypt-hash[:group,group]" per
 // line, blank lines and # comments ignored — `htpasswd -nbB name password`
@@ -156,11 +180,19 @@ func (a *Auth) Check(name, password string) (User, bool) {
 	return u, true
 }
 
+// Where a session's login happened.
+const (
+	SourceLocal = "local"
+	SourceOIDC  = "oidc"
+)
+
 // session is the signed cookie's content.
 type session struct {
 	User   string   `json:"u"`
 	Groups []string `json:"g,omitempty"`
 	Exp    int64    `json:"e"`
+	// Src is SourceOIDC for an OIDC login, empty for a local one.
+	Src string `json:"s,omitempty"`
 }
 
 // CookieName is the session cookie.
@@ -174,29 +206,53 @@ func (a *Auth) sign(payload []byte) string {
 
 // issue returns the cookie value for u.
 func (a *Auth) issue(u User) string {
-	payload, _ := json.Marshal(session{User: u.Name, Groups: u.Groups, Exp: a.now().Add(a.ttl).Unix()})
+	return a.issueSession(session{User: u.Name, Groups: u.Groups})
+}
+
+func (a *Auth) issueSession(s session) string {
+	s.Exp = a.now().Add(a.ttl).Unix()
+	payload, _ := json.Marshal(s)
 	return a.sign(payload)
 }
 
-// verify returns the session of a cookie value: signature, expiry, and the
-// user must still be in the users file (removing a line logs them out).
-func (a *Auth) verify(value string) (session, bool) {
+// open returns the payload of a signed value if the signature holds.
+func (a *Auth) open(value string) ([]byte, bool) {
 	enc, sig, ok := strings.Cut(value, ".")
 	if !ok {
-		return session{}, false
+		return nil, false
 	}
 	payload, err := base64.RawURLEncoding.DecodeString(enc)
 	if err != nil {
-		return session{}, false
+		return nil, false
 	}
 	if !hmac.Equal([]byte(a.sign(payload)), []byte(enc+"."+sig)) {
+		return nil, false
+	}
+	return payload, true
+}
+
+// verify returns the session of a cookie value: signature and expiry; a local
+// user must still be in the users file (removing a line logs them out once
+// the portal restarted), an OIDC login is only valid while OIDC is on.
+func (a *Auth) verify(value string) (session, bool) {
+	payload, ok := a.open(value)
+	if !ok {
 		return session{}, false
 	}
 	var s session
 	if json.Unmarshal(payload, &s) != nil || a.now().Unix() >= s.Exp {
 		return session{}, false
 	}
-	if _, ok := a.users[s.User]; !ok {
+	switch s.Src {
+	case "":
+		if _, ok := a.users[s.User]; !ok {
+			return session{}, false
+		}
+	case SourceOIDC:
+		if a.oidc == nil {
+			return session{}, false
+		}
+	default:
 		return session{}, false
 	}
 	return s, true
@@ -208,6 +264,8 @@ type ctxKey struct{}
 type Identity struct {
 	User   string
 	Groups []string
+	// Source is SourceLocal or SourceOIDC.
+	Source string
 }
 
 // FromContext returns the identity of the request, if any.

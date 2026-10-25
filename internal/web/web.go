@@ -79,6 +79,10 @@ func (w *Web) Register(mux *http.ServeMux) {
 		mux.HandleFunc("GET "+auth.LoginPath, w.LoginForm)
 		mux.HandleFunc("POST "+auth.LoginPath, w.LoginSubmit)
 		mux.HandleFunc("POST "+auth.LogoutPath, w.auth.Logout)
+		if w.auth.OIDCEnabled() {
+			mux.HandleFunc("GET "+auth.OIDCStartPath, w.OIDCStart)
+			mux.HandleFunc("GET "+auth.CallbackPath, w.OIDCCallback)
+		}
 	}
 	mux.HandleFunc("GET /{$}", w.Index)
 	mux.HandleFunc("GET /ui/status", w.StatusPartial)
@@ -169,11 +173,36 @@ type loginPage struct {
 	Brand branding.Branding
 	Next  string
 	Error string
+	// OIDC names the provider of the "log in with" button ("" for none);
+	// Local shows the user/password form, the emergency access next to it.
+	OIDC  string
+	Local bool
+}
+
+func (w *Web) loginPage(next, msg string) loginPage {
+	return loginPage{Brand: w.brand, Next: auth.SafeNext(next), Error: msg,
+		OIDC: w.auth.OIDCName(), Local: w.auth.LocalEnabled()}
 }
 
 // LoginForm is the login page.
 func (w *Web) LoginForm(rw http.ResponseWriter, r *http.Request) {
-	render(rw, w.login, "login", loginPage{Brand: w.brand, Next: auth.SafeNext(r.URL.Query().Get("next"))})
+	render(rw, w.login, "login", w.loginPage(r.URL.Query().Get("next"), ""))
+}
+
+// OIDCStart sends the browser to the provider, or shows the login page with
+// the reason it cannot.
+func (w *Web) OIDCStart(rw http.ResponseWriter, r *http.Request) {
+	if msg := w.auth.OIDCStart(rw, r); msg != "" {
+		render(rw, w.login, "login", w.loginPage(r.URL.Query().Get("next"), msg))
+	}
+}
+
+// OIDCCallback finishes an OIDC login, or shows the login page with the
+// reason it failed.
+func (w *Web) OIDCCallback(rw http.ResponseWriter, r *http.Request) {
+	if msg := w.auth.OIDCCallback(rw, r); msg != "" {
+		render(rw, w.login, "login", w.loginPage("/", msg))
+	}
 }
 
 // LoginSubmit checks the form; on failure it shows the form again with the
@@ -183,5 +212,5 @@ func (w *Web) LoginSubmit(rw http.ResponseWriter, r *http.Request) {
 	if ok {
 		return
 	}
-	render(rw, w.login, "login", loginPage{Brand: w.brand, Next: auth.SafeNext(r.PostForm.Get("next")), Error: msg})
+	render(rw, w.login, "login", w.loginPage(r.PostForm.Get("next"), msg))
 }

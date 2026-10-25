@@ -21,6 +21,12 @@ _theme = option("config.theme")
 _authMode = option("config.authMode")
 _authSecret = option("config.authSecret")
 _authSessionTTL = option("config.authSessionTTL")
+_authOidcIssuer = option("config.authOidcIssuer")
+_authOidcClientId = option("config.authOidcClientId")
+_authOidcRedirectUrl = option("config.authOidcRedirectUrl")
+_authOidcGroupsClaim = option("config.authOidcGroupsClaim")
+_authOidcAllowedGroups = option("config.authOidcAllowedGroups")
+_authOidcName = option("config.authOidcName")
 _title = option("config.title")
 _subtitle = option("config.subtitle")
 _headerImageConfigMap = option("config.headerImageConfigMap")
@@ -38,6 +44,18 @@ config: schema.Portal = schema.Portal {
         authSecret = _authSecret
     if _authSessionTTL:
         authSessionTTL = _authSessionTTL
+    if _authOidcIssuer:
+        authOidcIssuer = _authOidcIssuer
+    if _authOidcClientId:
+        authOidcClientId = _authOidcClientId
+    if _authOidcRedirectUrl:
+        authOidcRedirectUrl = _authOidcRedirectUrl
+    if _authOidcGroupsClaim:
+        authOidcGroupsClaim = _authOidcGroupsClaim
+    if _authOidcAllowedGroups:
+        authOidcAllowedGroups = _authOidcAllowedGroups
+    if _authOidcName:
+        authOidcName = _authOidcName
     if _title:
         title = _title
     if _subtitle:

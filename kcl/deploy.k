@@ -59,7 +59,19 @@ deployment = {
                                     }
                                 }
                             }
-                        ] if config.authMode != "none" else [])
+                        ] if config.authMode != "none" else []) + ([
+                            {
+                                name: "AUTH_OIDC_CLIENT_SECRET"
+                                valueFrom: {
+                                    secretKeyRef: {
+                                        name: config.authSecret
+                                        key: "oidc-client-secret"
+                                        # A public client (PKCE only) has none.
+                                        optional: True
+                                    }
+                                }
+                            }
+                        ] if config.authMode == "oidc" else [])
                         envFrom: [
                             {
                                 configMapRef: {

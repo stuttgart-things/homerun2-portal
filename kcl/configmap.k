@@ -24,6 +24,15 @@ configMap = {
         if config.authMode != "none":
             AUTH_USERS_FILE: "/etc/portal/auth/users"
             AUTH_SESSION_TTL: config.authSessionTTL
+        if config.authMode == "oidc":
+            AUTH_OIDC_ISSUER: config.authOidcIssuer
+            AUTH_OIDC_CLIENT_ID: config.authOidcClientId
+            AUTH_OIDC_REDIRECT_URL: config.authOidcRedirectUrl or "https://{}/auth/callback".format(config.httpRouteHostname)
+            AUTH_OIDC_NAME: config.authOidcName
+        if config.authMode == "oidc" and config.authOidcGroupsClaim:
+            AUTH_OIDC_GROUPS_CLAIM: config.authOidcGroupsClaim
+        if config.authMode == "oidc" and config.authOidcAllowedGroups:
+            AUTH_OIDC_ALLOWED_GROUPS: ",".join(config.authOidcAllowedGroups)
         if config.title:
             PORTAL_TITLE: config.title
         if config.subtitle:

@@ -17,8 +17,8 @@ const (
 // public paths need no login: the portal's own health, its static files
 // (the login page uses them) and the login itself.
 func public(path string) bool {
-	return path == "/health" || path == LoginPath || path == "/branding/header" ||
-		strings.HasPrefix(path, "/static/")
+	return path == "/health" || path == LoginPath || path == OIDCStartPath || path == CallbackPath ||
+		path == "/branding/header" || strings.HasPrefix(path, "/static/")
 }
 
 // StripIdentity removes identity headers a client sent; only the portal sets
@@ -52,7 +52,11 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		if len(s.Groups) > 0 {
 			r.Header.Set(HeaderGroups, strings.Join(s.Groups, ","))
 		}
-		ctx := context.WithValue(r.Context(), ctxKey{}, Identity{User: s.User, Groups: s.Groups})
+		src := s.Src
+		if src == "" {
+			src = SourceLocal
+		}
+		ctx := context.WithValue(r.Context(), ctxKey{}, Identity{User: s.User, Groups: s.Groups, Source: src})
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
@@ -85,7 +89,7 @@ func LoginURL(next string) string {
 // SafeNext keeps next on this portal: a path, not "//host" or a URL.
 func SafeNext(next string) string {
 	if !strings.HasPrefix(next, "/") || strings.HasPrefix(next, "//") || strings.HasPrefix(next, "/\\") ||
-		strings.HasPrefix(next, LoginPath) {
+		strings.HasPrefix(next, "/auth/") {
 		return "/"
 	}
 	return next
@@ -112,25 +116,38 @@ func (a *Auth) Login(w http.ResponseWriter, r *http.Request) (ok bool, msg strin
 		w.WriteHeader(http.StatusUnauthorized)
 		return false, "Wrong user name or password."
 	}
+	a.setSession(w, r, a.issue(u))
+	http.Redirect(w, r, SafeNext(r.PostForm.Get("next")), http.StatusSeeOther)
+	return true, ""
+}
+
+func (a *Auth) setSession(w http.ResponseWriter, r *http.Request, value string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     CookieName,
-		Value:    a.issue(u),
+		Value:    value,
 		Path:     "/",
 		MaxAge:   int(a.ttl / time.Second),
 		HttpOnly: true,
 		Secure:   secure(r),
 		SameSite: http.SameSiteLaxMode,
 	})
-	http.Redirect(w, r, SafeNext(r.PostForm.Get("next")), http.StatusSeeOther)
-	return true, ""
 }
 
-// Logout clears the session and returns to the login page.
+// Logout clears the session. After an OIDC login it also ends the session at
+// the provider (when it offers end_session_endpoint), which sends the browser
+// back to the login page; otherwise the next "log in with" would pass
+// silently.
 func (a *Auth) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name: CookieName, Value: "", Path: "/", MaxAge: -1,
 		HttpOnly: true, Secure: secure(r), SameSite: http.SameSiteLaxMode,
 	})
+	if id, ok := FromContext(r.Context()); ok && id.Source == SourceOIDC && a.oidc != nil {
+		if u := a.oidc.logoutURL(); u != "" {
+			http.Redirect(w, r, u, http.StatusSeeOther)
+			return
+		}
+	}
 	http.Redirect(w, r, LoginPath, http.StatusSeeOther)
 }
 
