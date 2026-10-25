@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
@@ -18,6 +19,7 @@ type Config struct {
 	Services       []services.Service
 	HealthInterval time.Duration
 	HealthTimeout  time.Duration
+	Branding       branding.Branding
 }
 
 // Load reads the environment. Invalid values are errors, not defaults: a
@@ -35,7 +37,13 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	brand, err := branding.Load(os.Getenv("PORTAL_THEME"), os.Getenv("PORTAL_TITLE"),
+		os.Getenv("PORTAL_SUBTITLE"), os.Getenv("PORTAL_HEADER_IMAGE"))
+	if err != nil {
+		return Config{}, err
+	}
 	return Config{
+		Branding:       brand,
 		Port:           getEnv("PORT", "8080"),
 		Services:       svcs,
 		HealthInterval: interval,

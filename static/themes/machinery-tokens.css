@@ -1,0 +1,42 @@
+/*
+ * machinery design tokens: the palette of the lab portal (PORTAL_THEME=machinery)
+ * and of the lab services behind it (clusterbook, clusterscope, machinery,
+ * claim-machinery-api). Same custom properties as homerun2-tokens.css, which
+ * the portal serves this file as; only custom properties, no rules.
+ */
+:root {
+    --hr-bg: #0f1117;
+    --hr-surface: #151821;
+    --hr-card: #1a1d27;
+    --hr-border: #2a2d3a;
+    --hr-text: #e1e4ed;
+    --hr-muted: #8b8fa3;
+
+    --hr-accent: #6c8aff;
+    --hr-accent-2: #38bdf8;
+    --hr-accent-3: #6c8aff;
+
+    --hr-ok: #4ade80;
+    --hr-info: #38bdf8;
+    --hr-warning: #fbbf24;
+    --hr-error: #f87171;
+    --hr-highlight: #7dd3fc;
+
+    --hr-radius: 10px;
+    --hr-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --hr-mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+    /* No pixel font in this theme: the places that use it get the UI font. */
+    --hr-pixel: var(--hr-font);
+
+    color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+    --hr-bg: #f1f5f9;
+    --hr-surface: #ffffff;
+    --hr-card: #ffffff;
+    --hr-border: #cbd5e1;
+    --hr-text: #0f172a;
+    --hr-muted: #475569;
+    color-scheme: light;
+}

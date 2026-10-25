@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
 )
 
@@ -46,6 +47,7 @@ type kioskPage struct {
 	kioskOptions
 	Status         []health.Status
 	RefreshSeconds int
+	Brand          branding.Branding
 }
 
 // parseKiosk reads the query of /kiosk. Anything it does not understand is
@@ -163,6 +165,7 @@ func (w *Web) Kiosk(rw http.ResponseWriter, r *http.Request) {
 		kioskOptions:   opts,
 		Status:         status,
 		RefreshSeconds: w.page(nil).RefreshSeconds,
+		Brand:          w.brand,
 	})
 }
 

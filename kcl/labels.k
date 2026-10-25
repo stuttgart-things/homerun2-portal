@@ -5,6 +5,7 @@ Common labels for sthings-portal resources
 import schema
 
 # Get command-line options
+_name = option("config.name")
 _image = option("config.image")
 _namespace = option("config.namespace")
 _services = option("config.services")
@@ -16,9 +17,26 @@ _httpRouteParentRefNamespace = option("config.httpRouteParentRefNamespace")
 _httpRouteHostname = option("config.httpRouteHostname")
 _httpRouteAnnotations = option("config.httpRouteAnnotations") or {}
 _extraEnvVars = option("config.extraEnvVars") or {}
+_theme = option("config.theme")
+_title = option("config.title")
+_subtitle = option("config.subtitle")
+_headerImageConfigMap = option("config.headerImageConfigMap")
+_headerImageKey = option("config.headerImageKey")
 
 # Config instance with command-line overrides
 config: schema.Portal = schema.Portal {
+    if _name:
+        name = _name
+    if _theme:
+        theme = _theme
+    if _title:
+        title = _title
+    if _subtitle:
+        subtitle = _subtitle
+    if _headerImageConfigMap:
+        headerImageConfigMap = _headerImageConfigMap
+    if _headerImageKey:
+        headerImageKey = _headerImageKey
     if _image:
         image = _image
     if _namespace:

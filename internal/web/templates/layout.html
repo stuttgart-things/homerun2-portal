@@ -3,17 +3,14 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{if .Current}}{{.CurrentTitle}} · {{end}}homerun2 portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/homerun2.css">
+    <title>{{if .Current}}{{.CurrentTitle}} · {{end}}{{.Brand.PageTitle}}</title>
+{{template "brand-head" .Brand}}
     <script src="/static/htmx.min.js"></script>
 </head>
 <body>
 <div class="hr-shell">
     <header class="hr-header">
-        <a class="hr-logo" href="/">HOMERUN²<small>PORTAL</small></a>
+        {{template "brand-logo" .Brand}}
         <div class="hr-status" id="hr-status" hx-get="/ui/status" hx-trigger="every {{.RefreshSeconds}}s" hx-swap="innerHTML">
             {{template "status" .Status}}
         </div>
@@ -44,3 +41,14 @@
 {{end}}
 
 {{define "status"}}{{range .}}<a class="hr-pill" href="/ui/{{.Key}}" title="{{if .Error}}{{.Error}}{{else if .Checked}}up{{else}}not checked yet{{end}}"><span class="hr-dot{{if .Checked}}{{if .Up}} up{{else}} down{{end}}{{end}}"></span>{{.Title}}</a>{{end}}{{end}}
+
+{{/* The deployment's look (internal/branding): the theme's font and
+     stylesheet, and the header graphic or the theme's text. */}}
+{{define "brand-head"}}{{if .PixelFont}}    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+{{end}}    <link rel="stylesheet" href="/static/homerun2.css">
+{{with .Stylesheet}}    <link rel="stylesheet" href="/static/{{.}}">
+{{end}}{{end}}
+
+{{define "brand-logo"}}{{if .HasHeaderImage}}<a class="hr-logo hr-logo-img" href="/"><img src="/branding/header" alt="{{.Title}}"></a>{{else}}<a class="hr-logo" href="/">{{.Title}}<small>{{.Subtitle}}</small></a>{{end}}{{end}}

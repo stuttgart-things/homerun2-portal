@@ -4,12 +4,16 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/config"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
 	"github.com/stuttgart-things/sthings-portal/internal/services"
@@ -74,5 +78,53 @@ func TestMux(t *testing.T) {
 	_ = resp.Body.Close()
 	if resp.StatusCode/100 != 3 || resp.Header.Get("Location") != "/led/" {
 		t.Errorf("GET /led = %d → %q, want a redirect to /led/", resp.StatusCode, resp.Header.Get("Location"))
+	}
+}
+
+// TestThemeFilesExist keeps every theme's files in static/.
+func TestThemeFilesExist(t *testing.T) {
+	for name, theme := range branding.Themes {
+		for _, f := range []string{theme.Tokens, theme.Stylesheet} {
+			if f == "" {
+				continue
+			}
+			if _, err := fs.Stat(staticFS, "static/"+f); err != nil {
+				t.Errorf("theme %s: %v", name, err)
+			}
+		}
+	}
+}
+
+// TestMuxBranding: the theme's palette is what the service UIs get as
+// /static/homerun2-tokens.css, and the header graphic is served.
+func TestMuxBranding(t *testing.T) {
+	img := filepath.Join(t.TempDir(), "lab.svg")
+	if err := os.WriteFile(img, []byte(`<svg xmlns="http://www.w3.org/2000/svg"/>`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	brand, err := branding.Load("machinery", "", "", img)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Config{HealthInterval: time.Second, HealthTimeout: time.Second, Branding: brand}
+	portal := httptest.NewServer(newMux(cfg, health.NewChecker(nil, time.Second), web.BuildInfo{}))
+	defer portal.Close()
+
+	for path, want := range map[string]string{
+		"/static/homerun2-tokens.css":  "--hr-accent: #6c8aff",
+		"/static/themes/machinery.css": ".hr-logo",
+		"/branding/header":             "<svg",
+		"/":                            `<img src="/branding/header" alt="machinery">`,
+		"/kiosk":                       `<img src="/branding/header" alt="machinery">`,
+	} {
+		resp, err := http.Get(portal.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
+		if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), want) {
+			t.Errorf("GET %s = %d, body lacks %q", path, resp.StatusCode, want)
+		}
 	}
 }

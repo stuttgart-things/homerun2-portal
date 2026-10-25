@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
 	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
@@ -29,7 +30,7 @@ func setup(t *testing.T) *http.ServeMux {
 	checker := health.NewChecker(svcs, time.Second)
 	checker.CheckAll(context.Background())
 	mux := http.NewServeMux()
-	New(svcs, checker, BuildInfo{Version: "v0.1.0", Commit: "0123456789", Date: "2026-10-20T06:56:56Z"}, 10*time.Second).Register(mux)
+	New(svcs, checker, BuildInfo{Version: "v0.1.0", Commit: "0123456789", Date: "2026-10-20T06:56:56Z"}, 10*time.Second, branding.Default()).Register(mux)
 	return mux
 }
 
@@ -62,7 +63,7 @@ func TestIndexListsEveryService(t *testing.T) {
 func TestNavFootLeavesOutAnUnknownBuildDate(t *testing.T) {
 	for _, date := range []string{"", "unknown"} {
 		mux := http.NewServeMux()
-		New(nil, health.NewChecker(nil, time.Second), BuildInfo{Version: "dev", Date: date}, time.Second).Register(mux)
+		New(nil, health.NewChecker(nil, time.Second), BuildInfo{Version: "dev", Date: date}, time.Second, branding.Default()).Register(mux)
 		if body := get(t, mux, "/").Body.String(); strings.Contains(body, "<dt>built</dt>") {
 			t.Errorf("date %q: the nav foot shows a build date", date)
 		}
@@ -111,7 +112,7 @@ func TestAPIServices(t *testing.T) {
 
 func TestNoServicesExplainsTheConfiguration(t *testing.T) {
 	mux := http.NewServeMux()
-	New(nil, health.NewChecker(nil, time.Second), BuildInfo{}, time.Second).Register(mux)
+	New(nil, health.NewChecker(nil, time.Second), BuildInfo{}, time.Second, branding.Default()).Register(mux)
 	if body := get(t, mux, "/").Body.String(); !strings.Contains(body, "PORTAL_SERVICES") {
 		t.Error("an empty portal does not say how to configure it")
 	}
@@ -134,7 +135,7 @@ func TestIndexComposesTheServiceFragments(t *testing.T) {
 	checker := health.NewChecker(svcs, time.Second)
 	checker.CheckAll(context.Background())
 	mux := http.NewServeMux()
-	New(svcs, checker, BuildInfo{}, 10*time.Second).Register(mux)
+	New(svcs, checker, BuildInfo{}, 10*time.Second, branding.Default()).Register(mux)
 
 	body := get(t, mux, "/").Body.String()
 	for _, want := range []string{
@@ -164,7 +165,7 @@ func TestNavigationTakesTheManifestTitle(t *testing.T) {
 	checker := health.NewChecker(svcs, time.Second)
 	checker.CheckAll(context.Background())
 	mux := http.NewServeMux()
-	New(svcs, checker, BuildInfo{}, 10*time.Second).Register(mux)
+	New(svcs, checker, BuildInfo{}, 10*time.Second, branding.Default()).Register(mux)
 
 	body := get(t, mux, "/ui/core").Body.String()
 	for _, want := range []string{
@@ -177,5 +178,42 @@ func TestNavigationTakesTheManifestTitle(t *testing.T) {
 	}
 	if strings.Contains(body, "Core Catcher") {
 		t.Error("the default title is still shown")
+	}
+}
+
+func TestBrandingInPages(t *testing.T) {
+	mux := http.NewServeMux()
+	brand, err := branding.Load("machinery", "Lab", "LABUL", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	New(nil, health.NewChecker(nil, time.Second), BuildInfo{}, time.Second, brand).Register(mux)
+
+	body := get(t, mux, "/").Body.String()
+	for _, want := range []string{
+		"<title>Lab</title>",
+		`<a class="hr-logo" href="/">Lab<small>LABUL</small></a>`,
+		`<link rel="stylesheet" href="/static/themes/machinery.css">`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("index lacks %q", want)
+		}
+	}
+	if strings.Contains(body, "Press+Start+2P") {
+		t.Error("machinery theme loads the pixel font")
+	}
+	if !strings.Contains(get(t, mux, "/kiosk").Body.String(), "Lab<small>KIOSK</small>") {
+		t.Error("kiosk lacks the theme title")
+	}
+
+	// The default keeps today's look.
+	def := get(t, setup(t), "/").Body.String()
+	for _, want := range []string{"<title>homerun2 portal</title>", "HOMERUN²<small>PORTAL</small>", "Press+Start+2P"} {
+		if !strings.Contains(def, want) {
+			t.Errorf("default index lacks %q", want)
+		}
+	}
+	if strings.Contains(def, "themes/") {
+		t.Error("default loads a theme stylesheet")
 	}
 }

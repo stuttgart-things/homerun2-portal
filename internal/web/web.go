@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
 	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
@@ -32,14 +33,16 @@ type Web struct {
 	checker  *health.Checker
 	build    BuildInfo
 	refresh  time.Duration
+	brand    branding.Branding
 
 	index   *template.Template
 	service *template.Template
 	kiosk   *template.Template
 }
 
-// New parses the templates; refresh is how often the header re-reads the status.
-func New(svcs []services.Service, checker *health.Checker, build BuildInfo, refresh time.Duration) *Web {
+// New parses the templates; refresh is how often the header re-reads the
+// status, brand the deployment's look.
+func New(svcs []services.Service, checker *health.Checker, build BuildInfo, refresh time.Duration, brand branding.Branding) *Web {
 	byKey := make(map[string]services.Service, len(svcs))
 	for _, s := range svcs {
 		byKey[s.Key] = s
@@ -53,6 +56,7 @@ func New(svcs []services.Service, checker *health.Checker, build BuildInfo, refr
 		checker:  checker,
 		build:    build,
 		refresh:  refresh,
+		brand:    brand,
 		index:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/index.html", "templates/bare.html")),
 		service:  template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/service.html")),
 		kiosk:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/kiosk.html")),
@@ -76,6 +80,7 @@ type page struct {
 	CurrentTitle   string
 	Build          BuildInfo
 	RefreshSeconds int
+	Brand          branding.Branding
 }
 
 func (w *Web) page(current *services.Service) page {
@@ -88,6 +93,7 @@ func (w *Web) page(current *services.Service) page {
 		Current:        current,
 		Build:          w.build,
 		RefreshSeconds: secs,
+		Brand:          w.brand,
 	}
 	for _, st := range p.Status {
 		if current != nil && st.Key == current.Key {

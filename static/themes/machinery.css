@@ -1,0 +1,33 @@
+/*
+ * machinery theme layout (PORTAL_THEME=machinery), loaded after homerun2.css.
+ * A calm, flat header instead of the HOMERUN² banner; the sizes made for the
+ * pixel font grow to readable sizes of the UI font.
+ */
+.hr-header,
+.hr-kiosk-header {
+    background: var(--hr-surface);
+    border-bottom: 1px solid var(--hr-border);
+    box-shadow: inset 0 -2px 0 var(--hr-accent);
+}
+
+.hr-logo {
+    gap: 4px;
+    font: 600 22px/1.1 var(--hr-font);
+    letter-spacing: 0.01em;
+    color: var(--hr-text);
+    text-shadow: none;
+}
+.hr-logo small {
+    font: 600 11px/1 var(--hr-font);
+    letter-spacing: 0.18em;
+    color: var(--hr-highlight);
+    text-shadow: none;
+}
+
+.hr-nav h4 { font: 600 11px/1 var(--hr-font); }
+.hr-card h3 { font: 600 15px/1.4 var(--hr-font); text-shadow: none; }
+.hr-card { box-shadow: inset 0 2px 0 var(--hr-accent); }
+.hr-frag-title { font: 600 11px/1.4 var(--hr-font); }
+.hr-kiosk-title { font: 600 18px/1.4 var(--hr-font); text-shadow: none; }
+.hr-btn { box-shadow: none; }
+.hr-btn:active { transform: none; }

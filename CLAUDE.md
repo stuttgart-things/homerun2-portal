@@ -68,6 +68,8 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 - `internal/health/manifest.go` — reads `/<key>/ui/manifest.json`: title and version (cleaned to one line), and only fragment URLs under the service's prefix
 - `internal/web/` — templates (`layout`, `index`, `service`, `status` partial, `bare`, `kiosk`) and handlers
 - `internal/web/kiosk.go`, `static/kiosk.js` — `/kiosk`: query options (checked server-side, 400 on anything unknown) and the rotation in the browser (skips down services, at most two iframes, input pauses)
+- `internal/branding/` — theme presets (`Themes`), `PORTAL_THEME`/`TITLE`/`SUBTITLE`/`HEADER_IMAGE`; the theme's palette is served **as** `/static/homerun2-tokens.css` so the services follow the theme — keep that path, the service UIs link it
+- `static/themes/` — per-theme palette (`<name>-tokens.css`, same custom properties as `homerun2-tokens.css`) and layout (`<name>.css`, loaded after `homerun2.css`)
 - `static/homerun2-tokens.css` — design tokens (`--hr-*`) only, dark by default; service UIs link it behind the portal (README "Shared theme"), so keep rules out of it
 - `static/homerun2.css` — portal layout (retro banner look of the service UIs: accent gradient, `--hr-pixel` font) and the fragment `hr-*` classes; imports the tokens
 - `static/sthings-logo.png` — the stuttgart-things logo of the nav footer's credit (vendored, no request to GitHub)
@@ -87,6 +89,9 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 | `HEALTH_TIMEOUT` | `2s` | Per status check |
 | `LOG_FORMAT` | `json` | `json` or `text` |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `PORTAL_THEME` | `homerun2` | `homerun2` or `machinery` (`internal/branding`) |
+| `PORTAL_TITLE`, `PORTAL_SUBTITLE` | *(theme's)* | Header text |
+| `PORTAL_HEADER_IMAGE` | *(none)* | Header graphic file instead of the text, served at `/branding/header` |
 
 ## Testing
 

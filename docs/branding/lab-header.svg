@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="56" viewBox="0 0 360 56">
+  <!-- Example header graphic for the lab portal (PORTAL_HEADER_IMAGE). -->
+  <g fill="none" stroke="#6c8aff" stroke-width="3" stroke-linejoin="round">
+    <path d="M10 44 L10 14 L24 30 L38 14 L38 44"/>
+    <circle cx="24" cy="30" r="22" stroke="#38bdf8" stroke-width="2" opacity="0.6"/>
+  </g>
+  <text x="58" y="31" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="24" font-weight="700" fill="#e1e4ed">machinery</text>
+  <text x="59" y="47" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="10" font-weight="600" letter-spacing="3" fill="#7dd3fc">LAB PORTAL · LABUL</text>
+</svg>

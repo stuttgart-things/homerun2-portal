@@ -124,12 +124,43 @@ keeps its full header.
 | `HEALTH_TIMEOUT` | `2s` | Per check |
 | `LOG_FORMAT` | `json` | `json` or `text` |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `PORTAL_THEME` | `homerun2` | Look of this deployment: `homerun2` or `machinery` (see Branding) |
+| `PORTAL_TITLE` | *(theme's)* | Header text, also the page title |
+| `PORTAL_SUBTITLE` | *(theme's)* | Small line under the header text |
+| `PORTAL_HEADER_IMAGE` | *(none)* | Path to a header graphic (`.svg`, `.png`, `.jpg`, `.webp`, at most 1 MiB) shown instead of the text |
 
 Known keys get a title: `led` LED Matrix, `core` Core Catcher, `light` Light
 Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher, `notify`
 Notification Catcher.
-`api`, `health`, `kiosk`, `static` and `ui` are the portal's own and cannot be
+`api`, `branding`, `health`, `kiosk`, `static` and `ui` are the portal's own and cannot be
 keys, nor can `overview` (it names the overview in `/kiosk?services=`).
+
+## Branding
+
+One codebase, one look per use case, chosen at deploy time:
+
+| Theme | Look | Used by |
+|---|---|---|
+| `homerun2` (default) | Accent gradient banner, HOMERUN² in the pixel font, amber subtitles | `homerun2-portal` |
+| `machinery` | Flat dark header with an accent line, UI font throughout, the machinery palette | `lab-portal` (clusterbook, clusterscope, machinery, claim-machinery-api) |
+
+A theme is a palette (`static/homerun2-tokens.css`, `static/themes/<name>-tokens.css`)
+plus an optional layout stylesheet (`static/themes/<name>.css`). The portal
+serves the theme's palette **as `/static/homerun2-tokens.css`** — the file the
+service UIs link behind the portal — so the services take on the theme too.
+
+`PORTAL_TITLE`/`PORTAL_SUBTITLE` change the header text. `PORTAL_HEADER_IMAGE`
+replaces it with a graphic, served by the portal at `/branding/header` (an SVG
+with a CSP that blocks script). In Kubernetes the graphic comes from a
+ConfigMap (KCL `config.headerImageConfigMap`, `config.headerImageKey`):
+
+```bash
+kubectl -n lab-portal create configmap lab-portal-branding --from-file=header.svg
+```
+
+`docs/branding/lab-header.svg` is an example; `tests/kcl-lab-profile.yaml`
+renders the lab instance with it. A new theme is a new entry in
+`internal/branding` and its files under `static/themes/`.
 
 ## Endpoints
 

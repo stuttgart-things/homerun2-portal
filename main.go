@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/config"
 	"github.com/stuttgart-things/sthings-portal/internal/handlers"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
@@ -93,8 +94,18 @@ func newMux(cfg config.Config, checker *health.Checker, build web.BuildInfo) *ht
 		os.Exit(1)
 	}
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticSub))))
+	brand := cfg.Branding
+	if brand.Name == "" {
+		brand = branding.Default()
+	}
+	// The theme's palette under the path the service UIs link, so they take
+	// on the deployment's theme too.
+	mux.HandleFunc("GET /static/homerun2-tokens.css", func(rw http.ResponseWriter, r *http.Request) {
+		http.ServeFileFS(rw, r, staticSub, brand.Tokens)
+	})
+	mux.HandleFunc("GET "+branding.HeaderImagePath, brand.ServeHeaderImage)
 
-	web.New(cfg.Services, checker, build, cfg.HealthInterval).Register(mux)
+	web.New(cfg.Services, checker, build, cfg.HealthInterval, brand).Register(mux)
 
 	for _, s := range cfg.Services {
 		// "/led/" matches the whole subtree; "/led" redirects to it.

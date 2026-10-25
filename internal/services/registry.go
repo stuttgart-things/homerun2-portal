@@ -45,7 +45,7 @@ var knownTitles = map[string]string{
 // would shadow the portal or be shadowed by it. "overview" is not a path but
 // names the overview in /kiosk?services=.
 var reserved = map[string]bool{
-	"api": true, "health": true, "kiosk": true, "overview": true, "static": true, "ui": true,
+	"api": true, "branding": true, "health": true, "kiosk": true, "overview": true, "static": true, "ui": true,
 }
 
 var keyPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
