@@ -1,3 +1,3 @@
 module github.com/stuttgart-things/homerun2-portal
 
-go 1.26.6
+go 1.27.3
