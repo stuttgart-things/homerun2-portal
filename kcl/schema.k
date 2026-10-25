@@ -39,14 +39,30 @@ schema Portal:
     headerImageConfigMap: str = ""
     headerImageKey: str = "header.svg"
 
-    # Login in front of the portal (#24): "none" or "local". "local" needs
-    # an existing Secret authSecret with two keys:
-    #   users        one "name:bcrypt-hash[:group,group]" per line
-    #                (htpasswd -nbB name password)
-    #   session-key  at least 32 random bytes (openssl rand -base64 48)
+    # Login in front of the portal (#24): "none", "local" or "oidc". Both
+    # need an existing Secret authSecret with the keys:
+    #   users               one "name:bcrypt-hash[:group,group]" per line
+    #                       (htpasswd -nbB name password); with oidc the
+    #                       emergency access for when the provider is down
+    #   session-key         at least 32 random bytes (openssl rand -base64 48)
+    #   oidc-client-secret  oidc only; leave the key out for a public client
+    #                       (PKCE without secret)
     authMode: str = "none"
     authSecret: str = ""
     authSessionTTL: str = "12h"
+    # OIDC (Zitadel): issuer and client of the portal's application; the
+    # redirect URI defaults to https://<httpRouteHostname>/auth/callback.
+    # Zitadel puts the project roles into the ID token under
+    # urn:zitadel:iam:org:project:roles (id_token_role_assertion); only users
+    # with one of authOidcAllowedGroups get in (empty: every user the
+    # provider lets through).
+    authOidcIssuer: str = ""
+    authOidcClientId: str = ""
+    authOidcRedirectUrl: str = ""
+    # Empty reads "groups", else urn:zitadel:iam:org:project:roles.
+    authOidcGroupsClaim: str = ""
+    authOidcAllowedGroups: [str] = []
+    authOidcName: str = "Zitadel"
 
     # How often and how patiently the services' /health is checked
     healthInterval: str = "10s"
@@ -77,6 +93,8 @@ schema Portal:
         containerPort >= 1 and containerPort <= 65535, "containerPort must be valid"
         name != "", "name must not be empty"
         theme in ["homerun2", "machinery"], "theme must be homerun2 or machinery"
-        authMode in ["none", "local"], "authMode must be none or local"
-        authMode == "none" or authSecret, "authMode local needs authSecret"
+        authMode in ["none", "local", "oidc"], "authMode must be none, local or oidc"
+        authMode == "none" or authSecret, "authMode local or oidc needs authSecret"
+        authMode != "oidc" or authOidcIssuer and authOidcClientId, "authMode oidc needs authOidcIssuer and authOidcClientId"
+        authMode != "oidc" or authOidcRedirectUrl or httpRouteHostname, "authMode oidc needs authOidcRedirectUrl or httpRouteHostname"
         namespace != "", "namespace must not be empty"

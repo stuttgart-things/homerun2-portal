@@ -265,3 +265,56 @@ func get200(t *testing.T, u string) string {
 	}
 	return string(body)
 }
+
+// TestMuxOIDCEmergencyAccess: with AUTH_MODE=oidc and the provider down, the
+// login page offers the provider and the local emergency access, the button
+// says the provider is unreachable, and the local login still gets in.
+func TestMuxOIDCEmergencyAccess(t *testing.T) {
+	h, err := auth.HashPassword("break-glass")
+	if err != nil {
+		t.Fatal(err)
+	}
+	users := filepath.Join(t.TempDir(), "users")
+	if err := os.WriteFile(users, []byte("admin:"+h+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	a, err := auth.New(auth.Config{Mode: "oidc", UsersFile: users, SessionKey: strings.Repeat("k", 32),
+		OIDC: auth.OIDCConfig{Issuer: "http://127.0.0.1:1", ClientID: "portal", RedirectURL: "https://portal.example/auth/callback"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svcs := identityService(t)
+	cfg := config.Config{Services: svcs, HealthInterval: time.Second, HealthTimeout: time.Second, Auth: a}
+	portal := httptest.NewServer(newMux(cfg, health.NewChecker(svcs, time.Second), web.BuildInfo{}))
+	defer portal.Close()
+
+	page := get200(t, portal.URL+"/auth/login?next=/ui/led")
+	for _, want := range []string{`href="/auth/oidc?next=%2fui%2fled">Log in with Zitadel</a>`, `<details class="hr-login-local">`, `action="/auth/login"`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("login page lacks %s", want)
+		}
+	}
+
+	resp, err := http.Get(portal.URL + "/auth/oidc?next=/ui/led")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusBadGateway || !strings.Contains(string(body), "Zitadel is not reachable right now.") ||
+		!strings.Contains(string(body), `<details class="hr-login-local" open>`) {
+		t.Errorf("provider down: %d, want 502 with the message and the emergency form open", resp.StatusCode)
+	}
+
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar}
+	resp, err = client.PostForm(portal.URL+"/auth/login", url.Values{"username": {"admin"}, "password": {"break-glass"}, "next": {"/led/"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ = io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if string(body) != `user="admin" groups=""` {
+		t.Errorf("after emergency login the service got %s", body)
+	}
+}

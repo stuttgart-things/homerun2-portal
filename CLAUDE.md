@@ -68,7 +68,7 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 - `internal/health/manifest.go` — reads `/<key>/ui/manifest.json`: title and version (cleaned to one line), and only fragment URLs under the service's prefix
 - `internal/web/` — templates (`layout`, `index`, `service`, `status` partial, `bare`, `kiosk`) and handlers
 - `internal/web/kiosk.go`, `static/kiosk.js` — `/kiosk`: query options (checked server-side, 400 on anything unknown) and the rotation in the browser (skips down services, at most two iframes, input pauses)
-- `internal/auth/` — login (`AUTH_MODE=local`): users file, signed session cookie, `Middleware` in front of the whole mux, `X-Forwarded-User`/`-Groups` to the services. Identity headers from clients are **always** stripped (`StripIdentity`, also without auth). The only package that may import `x/crypto` (ADR 0001)
+- `internal/auth/` — login (`AUTH_MODE=local` or `oidc`): users file, signed session cookie, `Middleware` in front of the whole mux, `X-Forwarded-User`/`-Groups` to the services. Identity headers from clients are **always** stripped (`StripIdentity`, also without auth). `oidc.go`: code flow + PKCE against Zitadel; the users file stays the **emergency access** — keep provider discovery lazy (never at startup) so the local login works while the provider is down. The only package that may import `x/crypto`, `go-oidc`, `x/oauth2` (ADR 0001)
 - `internal/branding/` — theme presets (`Themes`), `PORTAL_THEME`/`TITLE`/`SUBTITLE`/`HEADER_IMAGE`; the theme's palette is served **as** `/static/homerun2-tokens.css` so the services follow the theme — keep that path, the service UIs link it
 - `static/themes/` — per-theme palette (`<name>-tokens.css`, same custom properties as `homerun2-tokens.css`) and layout (`<name>.css`, loaded after `homerun2.css`)
 - `static/homerun2-tokens.css` — design tokens (`--hr-*`) only, dark by default; service UIs link it behind the portal (README "Shared theme"), so keep rules out of it
@@ -93,8 +93,10 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 | `PORTAL_THEME` | `homerun2` | `homerun2` or `machinery` (`internal/branding`) |
 | `PORTAL_TITLE`, `PORTAL_SUBTITLE` | *(theme's)* | Header text |
 | `PORTAL_HEADER_IMAGE` | *(none)* | Header graphic file instead of the text, served at `/branding/header` |
-| `AUTH_MODE` | `none` | `none` or `local` (`internal/auth`) |
-| `AUTH_USERS_FILE`, `AUTH_SESSION_KEY`, `AUTH_SESSION_TTL` | *(none)*, *(none)*, `12h` | Users file (htpasswd bcrypt, optional `:groups`), cookie signing key (≥ 32 bytes), login lifetime |
+| `AUTH_MODE` | `none` | `none`, `local` or `oidc` (`internal/auth`) |
+| `AUTH_USERS_FILE`, `AUTH_SESSION_KEY`, `AUTH_SESSION_TTL` | *(none)*, *(none)*, `12h` | Users file (htpasswd bcrypt, optional `:groups`; emergency access with `oidc`), cookie signing key (≥ 32 bytes), login lifetime |
+| `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_CLIENT_SECRET`, `AUTH_OIDC_REDIRECT_URL` | *(none)* | `oidc`: provider, client, `https://<portal>/auth/callback` |
+| `AUTH_OIDC_GROUPS_CLAIM`, `AUTH_OIDC_ALLOWED_GROUPS`, `AUTH_OIDC_USER_CLAIM`, `AUTH_OIDC_SCOPES`, `AUTH_OIDC_NAME` | `groups` then `urn:zitadel:iam:org:project:roles`, *(any)*, `preferred_username`, `openid profile email`, `Zitadel` | Groups claim, who may log in, user name claim, scopes, button label |
 
 ## Testing
 

@@ -12,14 +12,25 @@
 <script>if (window.self !== window.top) window.top.location.href = window.location.href</script>
 <main class="hr-login">
     <header class="hr-header">{{template "brand-logo" .Brand}}</header>
-    <form method="post" action="/auth/login">
-        <input type="hidden" name="next" value="{{.Next}}">
-        <label>User <input name="username" autocomplete="username" required autofocus></label>
-        <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <div class="hr-login-body">
         {{with .Error}}<p class="hr-login-error" role="alert">{{.}}</p>{{end}}
-        <button class="hr-btn" type="submit">Log in</button>
-    </form>
+        {{if .OIDC}}<a class="hr-btn hr-login-sso" href="/auth/oidc?next={{.Next}}">Log in with {{.OIDC}}</a>{{end}}
+        {{if .Local}}{{if .OIDC}}
+        {{/* The users file is the emergency access when the provider is
+             down; it stays out of the way until opened. */}}
+        <details class="hr-login-local"{{if .Error}} open{{end}}>
+            <summary>Emergency access (local user)</summary>
+            {{template "login-form" .}}
+        </details>{{else}}{{template "login-form" .}}{{end}}{{end}}
+    </div>
 </main>
 </body>
 </html>
 {{end}}
+
+{{define "login-form"}}<form method="post" action="/auth/login">
+            <input type="hidden" name="next" value="{{.Next}}">
+            <label>User <input name="username" autocomplete="username" required{{if not .OIDC}} autofocus{{end}}></label>
+            <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+            <button class="hr-btn" type="submit">Log in</button>
+        </form>{{end}}

@@ -54,6 +54,17 @@ func Load() (Config, error) {
 		UsersFile:  os.Getenv("AUTH_USERS_FILE"),
 		SessionKey: os.Getenv("AUTH_SESSION_KEY"),
 		SessionTTL: ttl,
+		OIDC: auth.OIDCConfig{
+			Issuer:        os.Getenv("AUTH_OIDC_ISSUER"),
+			ClientID:      os.Getenv("AUTH_OIDC_CLIENT_ID"),
+			ClientSecret:  os.Getenv("AUTH_OIDC_CLIENT_SECRET"),
+			RedirectURL:   os.Getenv("AUTH_OIDC_REDIRECT_URL"),
+			Scopes:        list(os.Getenv("AUTH_OIDC_SCOPES"), " "),
+			UserClaim:     strings.TrimSpace(os.Getenv("AUTH_OIDC_USER_CLAIM")),
+			GroupsClaim:   strings.TrimSpace(os.Getenv("AUTH_OIDC_GROUPS_CLAIM")),
+			AllowedGroups: list(os.Getenv("AUTH_OIDC_ALLOWED_GROUPS"), ","),
+			Name:          strings.TrimSpace(os.Getenv("AUTH_OIDC_NAME")),
+		},
 	})
 	if err != nil {
 		return Config{}, err
@@ -78,6 +89,11 @@ func duration(name string, def time.Duration) (time.Duration, error) {
 		return 0, fmt.Errorf("%s %q: want a positive Go duration such as 10s", name, raw)
 	}
 	return d, nil
+}
+
+// list splits raw at sep (a space also splits a comma list), dropping blanks.
+func list(raw, sep string) []string {
+	return strings.FieldsFunc(raw, func(r rune) bool { return string(r) == sep || r == ' ' })
 }
 
 func getEnv(name, def string) string {

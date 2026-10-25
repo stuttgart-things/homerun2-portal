@@ -10,7 +10,13 @@ config.subtitle: LAB PORTAL
 config.headerImageConfigMap: lab-portal-branding
 config.headerImageKey: header.svg
 # Login with local users (kubectl -n lab-portal create secret generic
-# lab-portal-auth --from-file=users=./users --from-literal=session-key="$(openssl rand -base64 48)")
+# lab-portal-auth --from-file=users=./users --from-literal=session-key="$(openssl rand -base64 48)").
+# For Zitadel switch to oidc and add the key oidc-client-secret to the same
+# Secret; the users stay as emergency access:
+#   config.authMode: oidc
+#   config.authOidcIssuer: https://zitadel.<cluster>.sthings-vsphere.<lab>.sva.de
+#   config.authOidcClientId: <terraform output -raw client_id>
+#   config.authOidcAllowedGroups: [portal-user, portal-admin]
 config.authMode: local
 config.authSecret: lab-portal-auth
 config.services:

@@ -128,10 +128,18 @@ keeps its full header.
 | `PORTAL_TITLE` | *(theme's)* | Header text, also the page title |
 | `PORTAL_SUBTITLE` | *(theme's)* | Small line under the header text |
 | `PORTAL_HEADER_IMAGE` | *(none)* | Path to a header graphic (`.svg`, `.png`, `.jpg`, `.webp`, at most 1 MiB) shown instead of the text |
-| `AUTH_MODE` | `none` | `none` (open, as before) or `local` (login, see Authentication) |
-| `AUTH_USERS_FILE` | *(none)* | Users file for `local`: `name:bcrypt-hash[:group,group]` per line |
+| `AUTH_MODE` | `none` | `none` (open, as before), `local` or `oidc` (login, see Authentication) |
+| `AUTH_USERS_FILE` | *(none)* | Users file: `name:bcrypt-hash[:group,group]` per line; required for `local`, the emergency access for `oidc` |
 | `AUTH_SESSION_KEY` | *(none)* | At least 32 bytes; signs the session cookie |
 | `AUTH_SESSION_TTL` | `12h` | How long a login lasts |
+| `AUTH_OIDC_ISSUER` | *(none)* | `oidc`: the provider, e.g. `https://zitadel.example.com` |
+| `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_CLIENT_SECRET` | *(none)* | `oidc`: the portal's client; no secret for a public client (PKCE only) |
+| `AUTH_OIDC_REDIRECT_URL` | *(none)* | `oidc`: `https://<portal>/auth/callback` |
+| `AUTH_OIDC_SCOPES` | `openid profile email` | `oidc`: space-separated (`openid` is always added) |
+| `AUTH_OIDC_USER_CLAIM` | `preferred_username` | `oidc`: names the user (then `email`, `sub`) |
+| `AUTH_OIDC_GROUPS_CLAIM` | `groups`, then Zitadel's roles | `oidc`: list, comma string, or object whose keys are the groups; unset reads `groups` and else `urn:zitadel:iam:org:project:roles` |
+| `AUTH_OIDC_ALLOWED_GROUPS` | *(any)* | `oidc`: comma-separated; only users with one of them get in |
+| `AUTH_OIDC_NAME` | `Zitadel` | `oidc`: label of the login button |
 
 Known keys get a title: `led` LED Matrix, `core` Core Catcher, `light` Light
 Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher, `notify`
@@ -195,7 +203,37 @@ kubectl -n lab-portal create secret generic lab-portal-auth \
 - Failed logins are slowed down; unknown users take as long as wrong
   passwords; the login rejects a form posted from another site.
 
-OIDC (Zitadel) follows as a second mode (#24, ADR 0001).
+### OIDC (Zitadel) with emergency access
+
+`AUTH_MODE=oidc` puts a "Log in with Zitadel" button on the login page
+(authorization code flow with PKCE, ID token checked for signature, issuer,
+audience, expiry and nonce). The users file stays next to it as **emergency
+access** under "Emergency access (local user)", for when the provider is down
+or misconfigured:
+
+- The provider is looked up on first use, not at startup — the portal starts
+  and the local login works even while Zitadel is unreachable; the button then
+  says so.
+- The KCL manifests mount `users` from `authSecret` in `oidc` mode too, so a
+  deployment without emergency access does not start. Without KCL the file
+  may be left out.
+- An OIDC session is void once the portal runs without `oidc`; a local session
+  needs the user's line, as above.
+- Logout also ends the session at the provider (`end_session_endpoint`) and
+  returns to `/auth/login`.
+
+At the provider register a web application with
+redirect URI `https://<portal>/auth/callback` and post-logout redirect URI
+`https://<portal>/auth/login`. For Zitadel, turn on the project's role
+assertion and the app's "roles in ID token" so the groups arrive in
+`urn:zitadel:iam:org:project:roles`, then limit the portal with
+`AUTH_OIDC_ALLOWED_GROUPS` (KCL `config.authOidcAllowedGroups`):
+
+```bash
+kubectl -n lab-portal create secret generic lab-portal-auth \
+  --from-file=users=./users --from-literal=session-key="$(openssl rand -base64 48)" \
+  --from-literal=oidc-client-secret="$(terraform output -raw client_secret)"
+```
 
 ## Endpoints
 

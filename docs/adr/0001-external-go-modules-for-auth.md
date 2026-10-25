@@ -40,6 +40,9 @@ stdlib-only; any further module needs its own ADR.
 - Renovate keeps the three modules current; security updates are merged
   promptly like any other dependency.
 - `internal/auth` is the only package that imports them.
+- `go-oidc` brings `github.com/go-jose/go-jose/v4` (JOSE/JWK parsing) as an
+  indirect module; it is covered by this decision, nothing imports it
+  directly.
 - The image grows slightly; the build (ko) is unchanged.
 - Rejected: hand-rolled OIDC (too much security-critical code to own);
   oauth2-proxy as the only path (no local-user fallback, no htmx-aware
