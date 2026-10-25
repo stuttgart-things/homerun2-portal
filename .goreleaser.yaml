@@ -8,9 +8,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: homerun2-portal
+  - id: sthings-portal
     main: .
-    binary: homerun2-portal
+    binary: sthings-portal
     env:
       - CGO_ENABLED=0
     flags:
@@ -45,6 +45,6 @@ changelog:
 release:
   github:
     owner: stuttgart-things
-    name: homerun2-portal
+    name: sthings-portal
   draft: false
   prerelease: auto

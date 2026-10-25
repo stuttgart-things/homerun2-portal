@@ -19,6 +19,6 @@ jobs:
       push-kustomize: true
       kcl-source-dir: kcl
       kcl-profile-file: tests/kcl-deploy-profile.yaml
-      kustomize-oci-repo: ghcr.io/stuttgart-things/homerun2-portal-kustomize
+      kustomize-oci-repo: ghcr.io/stuttgart-things/sthings-portal-kustomize
       kustomize-image-key: config.image
     secrets: inherit # pragma: allowlist secret

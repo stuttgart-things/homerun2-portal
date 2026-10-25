@@ -1,16 +1,16 @@
 """
-Schema definition for homerun2-portal deployment configuration
+Schema definition for sthings-portal deployment configuration
 """
 
 schema Portal:
-    """Configuration for homerun2-portal Kubernetes deployment"""
+    """Configuration for sthings-portal Kubernetes deployment"""
 
     # Metadata
-    name: str = "homerun2-portal"
+    name: str = "sthings-portal"
     namespace: str = "homerun2"
 
     # Image
-    image: str = "ghcr.io/stuttgart-things/homerun2-portal:latest"
+    image: str = "ghcr.io/stuttgart-things/sthings-portal:latest"
     imagePullPolicy: str = "IfNotPresent"
 
     # Replicas and resources

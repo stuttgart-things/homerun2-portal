@@ -1,5 +1,5 @@
 """
-Service for homerun2-portal
+Service for sthings-portal
 """
 
 import labels

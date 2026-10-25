@@ -1,11 +1,14 @@
-# homerun2-portal
+# sthings-portal
 
-One frontend for the homerun2 services. The portal is a thin shell —
+One frontend for a set of services — the homerun2 services today, the lab
+services (clusterbook, clusterscope, machinery, claim-machinery-api) next
+([#23](https://github.com/stuttgart-things/sthings-portal/issues/23)), each
+as its own deployment. Formerly `homerun2-portal`. The portal is a thin shell —
 layout, navigation, service status — with a reverse proxy in front of each
 service UI, so everything lives under one hostname:
 
 ```
-Browser ──► homerun2-portal
+Browser ──► sthings-portal
               ├── /             overview: one card per service, live status
               ├── /ui/<key>     a service's UI inside the portal shell
               ├── /kiosk        the services full screen, one after another
@@ -188,7 +191,7 @@ task build-scan-image-ko  # ko image + Trivy
 Conventional commits on `main` drive semantic-release: after the image build
 on `main` succeeds, the `Release` workflow tags `vX.Y.Z`, publishes the
 GitHub release, stages the image and pushes the kustomize base to
-`ghcr.io/stuttgart-things/homerun2-portal-kustomize`. Same pipeline as the
+`ghcr.io/stuttgart-things/sthings-portal-kustomize`. Same pipeline as the
 other homerun2 Go services.
 
 ## Deployment

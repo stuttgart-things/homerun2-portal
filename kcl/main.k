@@ -1,5 +1,5 @@
 """
-Main entry point for homerun2-portal Kubernetes deployment
+Main entry point for sthings-portal Kubernetes deployment
 Imports all resources and exports manifests
 """
 

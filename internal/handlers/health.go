@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/web"
+	"github.com/stuttgart-things/sthings-portal/internal/web"
 )
 
 // NewHealthHandler answers GET /health with status and build info. It

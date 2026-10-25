@@ -11,8 +11,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stuttgart-things/homerun2-portal/internal/health"
-	"github.com/stuttgart-things/homerun2-portal/internal/services"
+	"github.com/stuttgart-things/sthings-portal/internal/health"
+	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
 
 //go:embed templates/*.html

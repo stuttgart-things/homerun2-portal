@@ -2,7 +2,7 @@
 
 ## Project
 
-homerun2-portal — Go service that is the single web frontend for homerun2: a shell (layout, navigation, service status) plus a reverse proxy that serves each service UI under its own prefix (`/led/`, `/core/`, …). First step of a micro-frontend approach: service UIs are embedded whole today and are to be composed from HTML fragments later.
+sthings-portal (formerly homerun2-portal) — Go service that is the single web frontend for a set of services, deployed once per set (homerun2 today, the lab services next, see #23): a shell (layout, navigation, service status) plus a reverse proxy that serves each service UI under its own prefix (`/led/`, `/core/`, …). First step of a micro-frontend approach: service UIs are embedded whole today and are to be composed from HTML fragments later.
 
 ## Tech Stack
 

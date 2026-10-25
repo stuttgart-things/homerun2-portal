@@ -108,7 +108,7 @@ tasks:
         gh workflow run Release
         sleep 2
         RUN_ID=$(gh run list --workflow=Release --limit=1 --json databaseId --jq '.[0].databaseId')
-        echo "Run: https://github.com/stuttgart-things/homerun2-portal/actions/runs/${RUN_ID}"
+        echo "Run: https://github.com/stuttgart-things/sthings-portal/actions/runs/${RUN_ID}"
         gh run watch "${RUN_ID}"
 
   # === KCL Manifest Rendering ===

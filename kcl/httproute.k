@@ -1,5 +1,5 @@
 """
-HTTPRoute (Gateway API) for homerun2-portal
+HTTPRoute (Gateway API) for sthings-portal
 
 The portal takes the whole hostname: its own pages at /, and every service
 under /<key>/ through its reverse proxy. The services need no route of their

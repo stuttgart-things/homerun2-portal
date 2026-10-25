@@ -1,5 +1,5 @@
 """
-ConfigMap for homerun2-portal
+ConfigMap for sthings-portal
 """
 
 import labels
