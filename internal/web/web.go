@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/auth"
 	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
 	"github.com/stuttgart-things/sthings-portal/internal/services"
@@ -34,10 +35,12 @@ type Web struct {
 	build    BuildInfo
 	refresh  time.Duration
 	brand    branding.Branding
+	auth     *auth.Auth
 
 	index   *template.Template
 	service *template.Template
 	kiosk   *template.Template
+	login   *template.Template
 }
 
 // New parses the templates; refresh is how often the header re-reads the
@@ -60,11 +63,23 @@ func New(svcs []services.Service, checker *health.Checker, build BuildInfo, refr
 		index:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/index.html", "templates/bare.html")),
 		service:  template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/service.html")),
 		kiosk:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/kiosk.html")),
+		login:    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/login.html")),
 	}
+}
+
+// WithAuth turns on the login pages (AUTH_MODE other than none).
+func (w *Web) WithAuth(a *auth.Auth) *Web {
+	w.auth = a
+	return w
 }
 
 // Register adds the portal's own routes to mux.
 func (w *Web) Register(mux *http.ServeMux) {
+	if w.auth != nil {
+		mux.HandleFunc("GET "+auth.LoginPath, w.LoginForm)
+		mux.HandleFunc("POST "+auth.LoginPath, w.LoginSubmit)
+		mux.HandleFunc("POST "+auth.LogoutPath, w.auth.Logout)
+	}
 	mux.HandleFunc("GET /{$}", w.Index)
 	mux.HandleFunc("GET /ui/status", w.StatusPartial)
 	mux.HandleFunc("GET /ui/{key}", w.Service)
@@ -81,9 +96,12 @@ type page struct {
 	Build          BuildInfo
 	RefreshSeconds int
 	Brand          branding.Branding
+	// User is the logged-in user ("" without auth); the navigation shows it
+	// with a logout button.
+	User string
 }
 
-func (w *Web) page(current *services.Service) page {
+func (w *Web) page(r *http.Request, current *services.Service) page {
 	secs := int(w.refresh / time.Second)
 	if secs < 1 {
 		secs = 1
@@ -95,6 +113,9 @@ func (w *Web) page(current *services.Service) page {
 		RefreshSeconds: secs,
 		Brand:          w.brand,
 	}
+	if id, ok := auth.FromContext(r.Context()); ok {
+		p.User = id.User
+	}
 	for _, st := range p.Status {
 		if current != nil && st.Key == current.Key {
 			p.CurrentTitle = st.Title
@@ -105,7 +126,7 @@ func (w *Web) page(current *services.Service) page {
 
 // Index is the overview: one card per service.
 func (w *Web) Index(rw http.ResponseWriter, r *http.Request) {
-	render(rw, w.index, "layout", w.page(nil))
+	render(rw, w.index, "layout", w.page(r, nil))
 }
 
 // Service is the portal page of one service: navigation around its own UI.
@@ -115,7 +136,7 @@ func (w *Web) Service(rw http.ResponseWriter, r *http.Request) {
 		http.NotFound(rw, r)
 		return
 	}
-	render(rw, w.service, "layout", w.page(&s))
+	render(rw, w.service, "layout", w.page(r, &s))
 }
 
 // StatusPartial is the header's status pills, polled by htmx.
@@ -142,4 +163,25 @@ func render(rw http.ResponseWriter, t *template.Template, name string, data any)
 	}
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = buf.WriteTo(rw)
+}
+
+type loginPage struct {
+	Brand branding.Branding
+	Next  string
+	Error string
+}
+
+// LoginForm is the login page.
+func (w *Web) LoginForm(rw http.ResponseWriter, r *http.Request) {
+	render(rw, w.login, "login", loginPage{Brand: w.brand, Next: auth.SafeNext(r.URL.Query().Get("next"))})
+}
+
+// LoginSubmit checks the form; on failure it shows the form again with the
+// reason (auth.Login has already written the status).
+func (w *Web) LoginSubmit(rw http.ResponseWriter, r *http.Request) {
+	ok, msg := w.auth.Login(rw, r)
+	if ok {
+		return
+	}
+	render(rw, w.login, "login", loginPage{Brand: w.brand, Next: auth.SafeNext(r.PostForm.Get("next")), Error: msg})
 }

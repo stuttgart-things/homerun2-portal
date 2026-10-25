@@ -6,13 +6,16 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/auth"
 	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/config"
 	"github.com/stuttgart-things/sthings-portal/internal/health"
@@ -127,4 +130,138 @@ func TestMuxBranding(t *testing.T) {
 			t.Errorf("GET %s = %d, body lacks %q", path, resp.StatusCode, want)
 		}
 	}
+}
+
+// identityService answers with the identity headers the portal forwards.
+func identityService(t *testing.T) []services.Service {
+	t.Helper()
+	svc := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			_, _ = fmt.Fprint(w, `{"status":"ok"}`)
+			return
+		}
+		_, _ = fmt.Fprintf(w, "user=%q groups=%q", r.Header.Get(auth.HeaderUser), r.Header.Get(auth.HeaderGroups))
+	}))
+	t.Cleanup(svc.Close)
+	svcs, err := services.Parse("led=" + svc.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return svcs
+}
+
+// TestMuxAuth: with AUTH_MODE=local nothing but the login and the public
+// files answers without a session; after login the services get the
+// identity, never one the client made up.
+func TestMuxAuth(t *testing.T) {
+	h, err := auth.HashPassword("secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	users := filepath.Join(t.TempDir(), "users")
+	if err := os.WriteFile(users, []byte("alice:"+string(h)+":lab-admins\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	a, err := auth.New(auth.Config{Mode: "local", UsersFile: users, SessionKey: strings.Repeat("k", 32)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svcs := identityService(t)
+	cfg := config.Config{Services: svcs, HealthInterval: time.Second, HealthTimeout: time.Second, Auth: a}
+	portal := httptest.NewServer(newMux(cfg, health.NewChecker(svcs, time.Second), web.BuildInfo{}))
+	defer portal.Close()
+
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar}
+	get := func(path string, header ...string) (int, string) {
+		req, _ := http.NewRequest(http.MethodGet, portal.URL+path, nil)
+		for i := 0; i+1 < len(header); i += 2 {
+			req.Header.Set(header[i], header[i+1])
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+		body, _ := io.ReadAll(resp.Body)
+		return resp.StatusCode, string(body)
+	}
+
+	// Public without a session; everything else sends a browser to the login.
+	for _, path := range []string{"/health", "/static/homerun2.css"} {
+		if code, _ := get(path); code != http.StatusOK {
+			t.Errorf("GET %s without session: %d", path, code)
+		}
+	}
+	if code, body := get("/ui/led", "Accept", "text/html"); code != http.StatusOK || !strings.Contains(body, `name="next" value="/ui/led"`) {
+		t.Errorf("GET /ui/led without session: %d, want the login form returning to /ui/led", code)
+	}
+	if code, _ := get("/led/api"); code != http.StatusUnauthorized {
+		t.Errorf("service API without session: %d, want 401", code)
+	}
+
+	// Log in.
+	resp, err := client.PostForm(portal.URL+"/auth/login", url.Values{"username": {"alice"}, "password": {"secret"}, "next": {"/ui/led"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Request.URL.Path != "/ui/led" {
+		t.Fatalf("login: ended at %s with %d", resp.Request.URL.Path, resp.StatusCode)
+	}
+
+	if _, body := get("/"); !strings.Contains(body, `<form class="hr-user" method="post" action="/auth/logout"><span title="logged in">alice</span>`) {
+		t.Error("overview: expected the user and a logout button")
+	}
+	if _, body := get("/led/", auth.HeaderUser, "root", auth.HeaderGroups, "cluster-admins"); body != `user="alice" groups="lab-admins"` {
+		t.Errorf("service got %s, want alice's identity only", body)
+	}
+
+	// Log out: the session is gone.
+	resp, err = client.PostForm(portal.URL+"/auth/logout", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if code, _ := get("/led/api"); code != http.StatusUnauthorized {
+		t.Errorf("after logout: %d, want 401", code)
+	}
+}
+
+// TestMuxNoAuthStripsIdentity: without auth nobody is logged in, so a
+// client must not be able to hand a service an identity either.
+func TestMuxNoAuthStripsIdentity(t *testing.T) {
+	svcs := identityService(t)
+	cfg := config.Config{Services: svcs, HealthInterval: time.Second, HealthTimeout: time.Second}
+	portal := httptest.NewServer(newMux(cfg, health.NewChecker(svcs, time.Second), web.BuildInfo{}))
+	defer portal.Close()
+
+	req, _ := http.NewRequest(http.MethodGet, portal.URL+"/led/", nil)
+	req.Header.Set(auth.HeaderUser, "root")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if string(body) != `user="" groups=""` {
+		t.Errorf("service got %s, want no identity", body)
+	}
+	if strings.Contains(get200(t, portal.URL+"/"), "/auth/logout") {
+		t.Error("overview shows a logout without auth")
+	}
+}
+
+func get200(t *testing.T, u string) string {
+	t.Helper()
+	resp, err := http.Get(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET %s = %d", u, resp.StatusCode)
+	}
+	return string(body)
 }

@@ -49,7 +49,17 @@ deployment = {
                                 name: "PORT"
                                 value: str(config.containerPort)
                             }
-                        ]
+                        ] + ([
+                            {
+                                name: "AUTH_SESSION_KEY"
+                                valueFrom: {
+                                    secretKeyRef: {
+                                        name: config.authSecret
+                                        key: "session-key"
+                                    }
+                                }
+                            }
+                        ] if config.authMode != "none" else [])
                         envFrom: [
                             {
                                 configMapRef: {
@@ -89,14 +99,20 @@ deployment = {
                             timeoutSeconds: 3
                             failureThreshold: 3
                         }
-                        if config.headerImageConfigMap:
-                            volumeMounts: [
+                        if config.headerImageConfigMap or config.authMode != "none":
+                            volumeMounts: ([
                                 {
                                     name: "branding"
                                     mountPath: "/etc/portal/branding"
                                     readOnly: True
                                 }
-                            ]
+                            ] if config.headerImageConfigMap else []) + ([
+                                {
+                                    name: "auth"
+                                    mountPath: "/etc/portal/auth"
+                                    readOnly: True
+                                }
+                            ] if config.authMode != "none" else [])
                         securityContext: {
                             readOnlyRootFilesystem: True
                             runAsNonRoot: True
@@ -107,15 +123,23 @@ deployment = {
                         }
                     }
                 ]
-                if config.headerImageConfigMap:
-                    volumes: [
+                if config.headerImageConfigMap or config.authMode != "none":
+                    volumes: ([
                         {
                             name: "branding"
                             configMap: {
                                 name: config.headerImageConfigMap
                             }
                         }
-                    ]
+                    ] if config.headerImageConfigMap else []) + ([
+                        {
+                            name: "auth"
+                            secret: {
+                                secretName: config.authSecret
+                                items: [{key: "users", path: "users"}]
+                            }
+                        }
+                    ] if config.authMode != "none" else [])
                 securityContext: {
                     runAsNonRoot: True
                     runAsUser: 65532

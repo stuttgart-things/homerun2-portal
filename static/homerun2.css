@@ -322,3 +322,19 @@ a { color: inherit; }
     .hr-main { padding: 16px; }
     .hr-main.hr-embed { height: 80vh; }
 }
+
+/* ---- login (AUTH_MODE=local) ---------------------------------------- */
+
+.hr-login-page { display: grid; place-items: center; min-height: 100vh; margin: 0; }
+.hr-login { width: min(380px, calc(100vw - 32px)); border: 1px solid var(--hr-border); border-radius: var(--hr-radius); overflow: hidden; background: var(--hr-card); }
+.hr-login .hr-header { padding: 18px 24px; }
+.hr-login form { display: grid; gap: 14px; padding: 24px; }
+.hr-login label { display: grid; gap: 6px; font-size: 13px; color: var(--hr-muted); }
+.hr-login input { padding: 9px 11px; border: 1px solid var(--hr-border); border-radius: 6px; background: var(--hr-bg); color: var(--hr-text); font: inherit; }
+.hr-login .hr-btn { border: 0; cursor: pointer; justify-self: start; }
+.hr-login-error { margin: 0; color: var(--hr-error); font-size: 13px; }
+
+.hr-user { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; font-size: 12px; }
+.hr-user span { color: var(--hr-text); font-family: var(--hr-mono); overflow: hidden; text-overflow: ellipsis; }
+.hr-user button { padding: 3px 8px; border: 1px solid var(--hr-border); border-radius: 6px; background: none; color: var(--hr-muted); font: inherit; cursor: pointer; }
+.hr-user button:hover { color: var(--hr-text); border-color: var(--hr-accent); }

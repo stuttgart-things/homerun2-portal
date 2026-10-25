@@ -1,0 +1,25 @@
+{{define "login"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Log in · {{.Brand.PageTitle}}</title>
+{{template "brand-head" .Brand}}
+</head>
+<body class="hr-login-page">
+{{/* Opened inside the portal's frame (a session ran out while a service
+     was shown), the login takes over the whole window. */}}
+<script>if (window.self !== window.top) window.top.location.href = window.location.href</script>
+<main class="hr-login">
+    <header class="hr-header">{{template "brand-logo" .Brand}}</header>
+    <form method="post" action="/auth/login">
+        <input type="hidden" name="next" value="{{.Next}}">
+        <label>User <input name="username" autocomplete="username" required autofocus></label>
+        <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+        {{with .Error}}<p class="hr-login-error" role="alert">{{.}}</p>{{end}}
+        <button class="hr-btn" type="submit">Log in</button>
+    </form>
+</main>
+</body>
+</html>
+{{end}}

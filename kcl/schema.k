@@ -39,6 +39,15 @@ schema Portal:
     headerImageConfigMap: str = ""
     headerImageKey: str = "header.svg"
 
+    # Login in front of the portal (#24): "none" or "local". "local" needs
+    # an existing Secret authSecret with two keys:
+    #   users        one "name:bcrypt-hash[:group,group]" per line
+    #                (htpasswd -nbB name password)
+    #   session-key  at least 32 random bytes (openssl rand -base64 48)
+    authMode: str = "none"
+    authSecret: str = ""
+    authSessionTTL: str = "12h"
+
     # How often and how patiently the services' /health is checked
     healthInterval: str = "10s"
     healthTimeout: str = "2s"
@@ -68,4 +77,6 @@ schema Portal:
         containerPort >= 1 and containerPort <= 65535, "containerPort must be valid"
         name != "", "name must not be empty"
         theme in ["homerun2", "machinery"], "theme must be homerun2 or machinery"
+        authMode in ["none", "local"], "authMode must be none or local"
+        authMode == "none" or authSecret, "authMode local needs authSecret"
         namespace != "", "namespace must not be empty"

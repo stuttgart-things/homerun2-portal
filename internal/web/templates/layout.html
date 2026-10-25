@@ -23,6 +23,7 @@
         <a href="/ui/{{.Key}}"{{if and $.Current (eq $.Current.Key .Key)}} aria-current="page"{{end}}{{if .Version}} title="{{.Version}}"{{end}}>{{.Title}}<span class="hr-path">{{.Path}}</span></a>
         {{end}}
         <div class="hr-nav-foot">
+            {{with .User}}<form class="hr-user" method="post" action="/auth/logout"><span title="logged in">{{.}}</span><button type="submit">log out</button></form>{{end}}
             <dl>
                 <dt>version</dt><dd>{{.Build.Version}}</dd>
                 {{with .Build.Commit}}<dt>commit</dt><dd>{{.}}</dd>{{end}}

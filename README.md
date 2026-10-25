@@ -128,11 +128,15 @@ keeps its full header.
 | `PORTAL_TITLE` | *(theme's)* | Header text, also the page title |
 | `PORTAL_SUBTITLE` | *(theme's)* | Small line under the header text |
 | `PORTAL_HEADER_IMAGE` | *(none)* | Path to a header graphic (`.svg`, `.png`, `.jpg`, `.webp`, at most 1 MiB) shown instead of the text |
+| `AUTH_MODE` | `none` | `none` (open, as before) or `local` (login, see Authentication) |
+| `AUTH_USERS_FILE` | *(none)* | Users file for `local`: `name:bcrypt-hash[:group,group]` per line |
+| `AUTH_SESSION_KEY` | *(none)* | At least 32 bytes; signs the session cookie |
+| `AUTH_SESSION_TTL` | `12h` | How long a login lasts |
 
 Known keys get a title: `led` LED Matrix, `core` Core Catcher, `light` Light
 Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher, `notify`
 Notification Catcher.
-`api`, `branding`, `health`, `kiosk`, `static` and `ui` are the portal's own and cannot be
+`api`, `auth`, `branding`, `health`, `kiosk`, `static` and `ui` are the portal's own and cannot be
 keys, nor can `overview` (it names the overview in `/kiosk?services=`).
 
 ## Branding
@@ -161,6 +165,37 @@ kubectl -n lab-portal create configmap lab-portal-branding --from-file=header.sv
 `docs/branding/lab-header.svg` is an example; `tests/kcl-lab-profile.yaml`
 renders the lab instance with it. A new theme is a new entry in
 `internal/branding` and its files under `static/themes/`.
+
+## Authentication
+
+The lab services behind the portal write (IP/DNS allocation, claim orders)
+and read live clusters, so the lab instance runs with a login.
+`AUTH_MODE=local` checks users from a file in htpasswd's bcrypt format:
+
+```bash
+htpasswd -nbB patrick 'a-long-password' >> users      # patrick:$2y$…
+# optional groups after another colon: patrick:$2y$…:lab-admins
+kubectl -n lab-portal create secret generic lab-portal-auth \
+  --from-file=users=./users --from-literal=session-key="$(openssl rand -base64 48)"
+```
+
+(KCL: `config.authMode: local`, `config.authSecret: lab-portal-auth`.)
+
+- Everything but `/health`, `/static/`, `/branding/header` and the login needs a
+  session: a page is redirected to `/auth/login?next=…` and back, an htmx
+  request gets `HX-Redirect`, anything else `401`.
+- The session is a signed (`HMAC-SHA256`), `HttpOnly`, `SameSite=Lax` cookie,
+  `Secure` behind HTTPS (also via `X-Forwarded-Proto`); it ends after
+  `AUTH_SESSION_TTL`, on logout, or when the user's line is removed (restart
+  the pod after changing the Secret).
+- The services get the identity as **`X-Forwarded-User`** and
+  **`X-Forwarded-Groups`**. Whatever a client sends under these names is
+  removed first — also with `AUTH_MODE=none`. Keep the services ClusterIP-only
+  so the portal cannot be bypassed.
+- Failed logins are slowed down; unknown users take as long as wrong
+  passwords; the login rejects a form posted from another site.
+
+OIDC (Zitadel) follows as a second mode (#24, ADR 0001).
 
 ## Endpoints
 
