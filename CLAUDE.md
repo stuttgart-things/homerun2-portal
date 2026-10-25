@@ -6,7 +6,7 @@ homerun2-portal — Go service that is the single web frontend for homerun2: a s
 
 ## Tech Stack
 
-- **Language**: Go 1.26+
+- **Language**: Go 1.27+
 - **HTTP**: stdlib `net/http` (no framework), `httputil.ReverseProxy`
 - **UI**: `html/template` + htmx (vendored, `static/htmx.min.js`)
 - **Build**: ko (`.ko.yaml`), no Dockerfile
@@ -14,7 +14,7 @@ homerun2-portal — Go service that is the single web frontend for homerun2: a s
 - **Deploy**: KCL manifests (`kcl/`), Kubernetes
 - **Infra**: GitHub Actions, semantic-release, renovate
 
-No external Go dependencies — keep it that way unless there is a strong reason.
+No external Go dependencies — keep it that way unless there is a strong reason. The one exception is authentication (`go-oidc`, `x/oauth2`, `x/crypto/bcrypt`, only in `internal/auth`), see [ADR 0001](docs/adr/0001-external-go-modules-for-auth.md); any further module needs its own ADR.
 
 ## Git Workflow
 
