@@ -8,10 +8,13 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -33,6 +36,13 @@ type fakeIdP struct {
 }
 
 func newFakeIdP(t *testing.T) *fakeIdP {
+	t.Helper()
+	return startFakeIdP(t, httptest.NewServer)
+}
+
+// startFakeIdP serves the provider with start: httptest.NewServer, or
+// httptest.NewTLSServer for a certificate no system trusts.
+func startFakeIdP(t *testing.T, start func(http.Handler) *httptest.Server) *fakeIdP {
 	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -82,7 +92,7 @@ func newFakeIdP(t *testing.T) *fakeIdP {
 			"access_token": "at", "token_type": "Bearer", "expires_in": 3600, "id_token": p.sign(claims),
 		})
 	})
-	p.srv = httptest.NewServer(mux)
+	p.srv = start(mux)
 	t.Cleanup(p.srv.Close)
 	return p
 }
@@ -347,6 +357,36 @@ func TestOIDCSessionNeedsOIDC(t *testing.T) {
 	}
 	if _, ok := local.verify(local.issueSession(session{User: "alice", Src: "ldap"})); ok {
 		t.Error("unknown source accepted")
+	}
+}
+
+// A provider with a private CA: unreachable without AUTH_OIDC_CA_FILE, a
+// full login with it; a file without a certificate fails startup.
+func TestOIDCCAFile(t *testing.T) {
+	p := startFakeIdP(t, httptest.NewTLSServer)
+	p.claims = map[string]any{"preferred_username": "patrick"}
+
+	without := newOIDCAuth(t, p.srv.URL, nil)
+	rec := httptest.NewRecorder()
+	if msg := without.OIDCStart(rec, httptest.NewRequest(http.MethodGet, OIDCStartPath, nil)); rec.Code != http.StatusBadGateway {
+		t.Errorf("without CA file: %d %q, want 502", rec.Code, msg)
+	}
+
+	ca := filepath.Join(t.TempDir(), "ca.pem")
+	if err := os.WriteFile(ca, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: p.srv.Certificate().Raw}), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	a := newOIDCAuth(t, p.srv.URL, func(c *Config) { c.OIDC.CAFile = ca })
+	flow, state := p.start(t, a, "/")
+	if s := sessionOf(t, a, callback(a, flow, "code=good-code&state="+url.QueryEscape(state))); s.User != "patrick" {
+		t.Errorf("session %+v", s)
+	}
+
+	for name, file := range map[string]string{"missing": filepath.Join(t.TempDir(), "nope.pem"), "no PEM": usersFile(t, "not a certificate")} {
+		if _, err := New(Config{Mode: "oidc", SessionKey: key, OIDC: OIDCConfig{
+			Issuer: "https://z", ClientID: "c", RedirectURL: "https://p/auth/callback", CAFile: file}}); err == nil {
+			t.Errorf("%s CA file accepted", name)
+		}
 	}
 }
 

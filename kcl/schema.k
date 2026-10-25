@@ -65,6 +65,11 @@ schema Portal:
     authOidcGroupsClaim: str = ""
     authOidcAllowedGroups: [str] = []
     authOidcName: str = "Zitadel"
+    # A provider certificate from a private PKI: an existing ConfigMap with
+    # the CA (PEM) under authOidcCaKey, trusted besides the system CAs, e.g.
+    # kubectl create configmap lab-portal-oidc-ca --from-file=ca.crt
+    authOidcCaConfigMap: str = ""
+    authOidcCaKey: str = "ca.crt"
 
     # How often and how patiently the services' /health is checked
     healthInterval: str = "10s"

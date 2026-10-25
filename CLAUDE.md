@@ -96,6 +96,7 @@ The proxy forwards the request path **unchanged** (`/led/x` → service `/led/x`
 | `AUTH_MODE` | `none` | `none`, `local` or `oidc` (`internal/auth`) |
 | `AUTH_USERS_FILE`, `AUTH_SESSION_KEY`, `AUTH_SESSION_TTL` | *(none)*, *(none)*, `12h` | Users file (htpasswd bcrypt, optional `:groups`; emergency access with `oidc`), cookie signing key (≥ 32 bytes), login lifetime |
 | `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_CLIENT_SECRET`, `AUTH_OIDC_REDIRECT_URL` | *(none)* | `oidc`: provider, client, `https://<portal>/auth/callback` |
+| `AUTH_OIDC_CA_FILE` | *(none)* | `oidc`: extra CAs (PEM) for a provider with a private PKI, besides the system ones |
 | `AUTH_KIOSK_TOKEN` | *(none)* | ≥ 32 bytes; `?kiosk_token=` logs a kiosk display in read-only |
 | `AUTH_OIDC_GROUPS_CLAIM`, `AUTH_OIDC_ALLOWED_GROUPS`, `AUTH_OIDC_USER_CLAIM`, `AUTH_OIDC_SCOPES`, `AUTH_OIDC_NAME` | `groups` then `urn:zitadel:iam:org:project:roles`, *(any)*, `preferred_username`, `openid profile email`, `Zitadel` | Groups claim, who may log in, user name claim, scopes, button label |
 

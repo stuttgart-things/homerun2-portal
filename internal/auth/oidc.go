@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
@@ -11,6 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"strings"
 	"sync"
@@ -62,6 +65,9 @@ type OIDCConfig struct {
 	AllowedGroups []string
 	// Name labels the login button.
 	Name string
+	// CAFile is a PEM file with CAs to trust for the provider besides the
+	// system ones — a lab Zitadel's certificate comes from a private PKI.
+	CAFile string
 }
 
 // oidcClient talks to the provider. Discovery happens on first use and is
@@ -69,6 +75,9 @@ type OIDCConfig struct {
 // portal from starting — the local emergency access must keep working.
 type oidcClient struct {
 	cfg OIDCConfig
+
+	// http talks to the provider; nil uses http.DefaultClient.
+	http *http.Client
 
 	mu         sync.Mutex
 	verifier   *oidc.IDTokenVerifier
@@ -101,7 +110,42 @@ func newOIDCClient(cfg OIDCConfig) (*oidcClient, error) {
 	if cfg.Name == "" {
 		cfg.Name = "Zitadel"
 	}
-	return &oidcClient{cfg: cfg}, nil
+	c := &oidcClient{cfg: cfg}
+	if cfg.CAFile != "" {
+		client, err := clientWithCA(cfg.CAFile)
+		if err != nil {
+			return nil, err
+		}
+		c.http = client
+	}
+	return c, nil
+}
+
+// clientWithCA trusts the system CAs plus those in file.
+func clientWithCA(file string) (*http.Client, error) {
+	pem, err := os.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("AUTH_OIDC_CA_FILE: %w", err)
+	}
+	pool, err := x509.SystemCertPool()
+	if err != nil {
+		pool = x509.NewCertPool()
+	}
+	if !pool.AppendCertsFromPEM(pem) {
+		return nil, fmt.Errorf("AUTH_OIDC_CA_FILE %q: no PEM certificate found", file)
+	}
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.TLSClientConfig = &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
+	return &http.Client{Transport: t}, nil
+}
+
+// ctx carries the client for go-oidc and x/oauth2 (discovery, keys, token
+// exchange).
+func (c *oidcClient) ctx(ctx context.Context) context.Context {
+	if c.http == nil {
+		return ctx
+	}
+	return oidc.ClientContext(ctx, c.http)
 }
 
 func absURL(name, raw string) error {
@@ -121,7 +165,7 @@ func (c *oidcClient) discover(ctx context.Context) (*oidc.IDTokenVerifier, *oaut
 	}
 	ctx, cancel := context.WithTimeout(ctx, providerTimeout)
 	defer cancel()
-	p, err := oidc.NewProvider(ctx, c.cfg.Issuer)
+	p, err := oidc.NewProvider(c.ctx(ctx), c.cfg.Issuer)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -267,7 +311,7 @@ func (a *Auth) OIDCCallback(w http.ResponseWriter, r *http.Request) (msg string)
 		w.WriteHeader(http.StatusBadGateway)
 		return a.oidc.cfg.Name + " is not reachable right now."
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), providerTimeout)
+	ctx, cancel := context.WithTimeout(a.oidc.ctx(r.Context()), providerTimeout)
 	defer cancel()
 	tok, err := oauth.Exchange(ctx, q.Get("code"), oauth2.VerifierOption(f.Verifier))
 	if err != nil {

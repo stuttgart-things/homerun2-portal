@@ -27,6 +27,8 @@ _authOidcRedirectUrl = option("config.authOidcRedirectUrl")
 _authOidcGroupsClaim = option("config.authOidcGroupsClaim")
 _authOidcAllowedGroups = option("config.authOidcAllowedGroups")
 _authOidcName = option("config.authOidcName")
+_authOidcCaConfigMap = option("config.authOidcCaConfigMap")
+_authOidcCaKey = option("config.authOidcCaKey")
 _title = option("config.title")
 _subtitle = option("config.subtitle")
 _headerImageConfigMap = option("config.headerImageConfigMap")
@@ -56,6 +58,10 @@ config: schema.Portal = schema.Portal {
         authOidcAllowedGroups = _authOidcAllowedGroups
     if _authOidcName:
         authOidcName = _authOidcName
+    if _authOidcCaConfigMap:
+        authOidcCaConfigMap = _authOidcCaConfigMap
+    if _authOidcCaKey:
+        authOidcCaKey = _authOidcCaKey
     if _title:
         title = _title
     if _subtitle:
