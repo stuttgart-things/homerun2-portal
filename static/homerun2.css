@@ -53,6 +53,10 @@ a { color: inherit; }
     text-decoration: none;
 }
 
+/* A header graphic (PORTAL_HEADER_IMAGE) instead of the text. */
+.hr-logo-img img { display: block; max-height: 56px; max-width: 360px; }
+.hr-kiosk-header .hr-logo-img img { max-height: 36px; }
+
 .hr-logo small {
     font: 10px/1 var(--hr-pixel);
     letter-spacing: 0.15em;

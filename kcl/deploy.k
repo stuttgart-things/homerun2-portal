@@ -89,6 +89,14 @@ deployment = {
                             timeoutSeconds: 3
                             failureThreshold: 3
                         }
+                        if config.headerImageConfigMap:
+                            volumeMounts: [
+                                {
+                                    name: "branding"
+                                    mountPath: "/etc/portal/branding"
+                                    readOnly: True
+                                }
+                            ]
                         securityContext: {
                             readOnlyRootFilesystem: True
                             runAsNonRoot: True
@@ -99,6 +107,15 @@ deployment = {
                         }
                     }
                 ]
+                if config.headerImageConfigMap:
+                    volumes: [
+                        {
+                            name: "branding"
+                            configMap: {
+                                name: config.headerImageConfigMap
+                            }
+                        }
+                    ]
                 securityContext: {
                     runAsNonRoot: True
                     runAsUser: 65532

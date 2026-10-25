@@ -19,6 +19,13 @@ configMap = {
         PORTAL_SERVICES: ",".join(config.services)
         HEALTH_INTERVAL: config.healthInterval
         HEALTH_TIMEOUT: config.healthTimeout
+        PORTAL_THEME: config.theme
+        if config.title:
+            PORTAL_TITLE: config.title
+        if config.subtitle:
+            PORTAL_SUBTITLE: config.subtitle
+        if config.headerImageConfigMap:
+            PORTAL_HEADER_IMAGE: "/etc/portal/branding/{}".format(config.headerImageKey)
         **config.extraEnvVars
     }
 }

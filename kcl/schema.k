@@ -26,6 +26,19 @@ schema Portal:
     #   ["led=http://homerun2-led-catcher.homerun2.svc.cluster.local"]
     services: [str] = []
 
+    # Look of this deployment (internal/branding): a theme preset —
+    # "homerun2" (pixel banner) or "machinery" (lab portal) — whose palette
+    # the services behind the portal take on too (PORTAL_THEME); optional
+    # header text (PORTAL_TITLE, PORTAL_SUBTITLE).
+    theme: str = "homerun2"
+    title: str = ""
+    subtitle: str = ""
+    # Header graphic instead of the text: an existing ConfigMap holding the
+    # image (.svg, .png, .jpg or .webp, at most 1 MiB) under headerImageKey,
+    # e.g. kubectl create configmap lab-portal-branding --from-file=header.svg
+    headerImageConfigMap: str = ""
+    headerImageKey: str = "header.svg"
+
     # How often and how patiently the services' /health is checked
     healthInterval: str = "10s"
     healthTimeout: str = "2s"
@@ -54,4 +67,5 @@ schema Portal:
         servicePort >= 1 and servicePort <= 65535, "servicePort must be valid"
         containerPort >= 1 and containerPort <= 65535, "containerPort must be valid"
         name != "", "name must not be empty"
+        theme in ["homerun2", "machinery"], "theme must be homerun2 or machinery"
         namespace != "", "namespace must not be empty"

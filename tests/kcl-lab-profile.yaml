@@ -1,0 +1,20 @@
+---
+# The lab instance of sthings-portal: the four lab services behind it, the
+# machinery theme and a header graphic from the lab-portal-branding ConfigMap
+# (kubectl -n lab-portal create configmap lab-portal-branding --from-file=header.svg).
+config.name: lab-portal
+config.namespace: lab-portal
+config.image: ghcr.io/stuttgart-things/sthings-portal:latest
+config.theme: machinery
+config.subtitle: LAB PORTAL
+config.headerImageConfigMap: lab-portal-branding
+config.headerImageKey: header.svg
+config.services:
+  - clusterbook|Clusterbook=http://clusterbook.clusterbook.svc.cluster.local:8080
+  - clusterscope|Clusterscope=http://clusterscope.clusterscope.svc.cluster.local:8080
+  - machinery|Machinery=http://machinery.machinery.svc.cluster.local:8080
+  - claims|Claims=http://claim-machinery-api.claim-machinery-api.svc.cluster.local:8080
+config.httpRouteEnabled: true
+config.httpRouteParentRefName: lab-gateway
+config.httpRouteParentRefNamespace: default
+config.httpRouteHostname: lab-portal.example.com

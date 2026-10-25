@@ -3,18 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kiosk · homerun2 portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/homerun2.css">
+    <title>Kiosk · {{.Brand.PageTitle}}</title>
+{{template "brand-head" .Brand}}
     <script src="/static/htmx.min.js"></script>
     <script src="/static/kiosk.js" defer></script>
 </head>
 <body>
 <div class="hr-kiosk" id="hr-kiosk" data-seconds="{{.Seconds}}" data-pause="{{.Pause}}" data-reset="{{.Reset}}" data-refresh="{{.RefreshSeconds}}">
     <header class="hr-kiosk-header">
-        <a class="hr-logo" href="/">HOMERUN²<small>KIOSK</small></a>
+        {{if .Brand.HasHeaderImage}}<a class="hr-logo hr-logo-img" href="/"><img src="/branding/header" alt="{{.Brand.Title}}"></a>{{else}}<a class="hr-logo" href="/">{{.Brand.Title}}<small>KIOSK</small></a>{{end}}
         <div class="hr-kiosk-now">
             <span class="hr-kiosk-title" id="hr-kiosk-title">{{with .Slides}}{{(index . 0).Title}}{{end}}</span>
             <span class="hr-kiosk-count" id="hr-kiosk-count"></span>
