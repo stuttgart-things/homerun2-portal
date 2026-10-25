@@ -20,6 +20,10 @@ configMap = {
         HEALTH_INTERVAL: config.healthInterval
         HEALTH_TIMEOUT: config.healthTimeout
         PORTAL_THEME: config.theme
+        AUTH_MODE: config.authMode
+        if config.authMode != "none":
+            AUTH_USERS_FILE: "/etc/portal/auth/users"
+            AUTH_SESSION_TTL: config.authSessionTTL
         if config.title:
             PORTAL_TITLE: config.title
         if config.subtitle:

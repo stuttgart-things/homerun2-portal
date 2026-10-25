@@ -18,6 +18,9 @@ _httpRouteHostname = option("config.httpRouteHostname")
 _httpRouteAnnotations = option("config.httpRouteAnnotations") or {}
 _extraEnvVars = option("config.extraEnvVars") or {}
 _theme = option("config.theme")
+_authMode = option("config.authMode")
+_authSecret = option("config.authSecret")
+_authSessionTTL = option("config.authSessionTTL")
 _title = option("config.title")
 _subtitle = option("config.subtitle")
 _headerImageConfigMap = option("config.headerImageConfigMap")
@@ -29,6 +32,12 @@ config: schema.Portal = schema.Portal {
         name = _name
     if _theme:
         theme = _theme
+    if _authMode:
+        authMode = _authMode
+    if _authSecret:
+        authSecret = _authSecret
+    if _authSessionTTL:
+        authSessionTTL = _authSessionTTL
     if _title:
         title = _title
     if _subtitle:

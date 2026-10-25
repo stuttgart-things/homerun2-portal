@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/auth"
 	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/services"
 )
@@ -20,6 +21,8 @@ type Config struct {
 	HealthInterval time.Duration
 	HealthTimeout  time.Duration
 	Branding       branding.Branding
+	// Auth is nil with AUTH_MODE=none (the default).
+	Auth *auth.Auth
 }
 
 // Load reads the environment. Invalid values are errors, not defaults: a
@@ -42,7 +45,21 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	ttl, err := duration("AUTH_SESSION_TTL", 12*time.Hour)
+	if err != nil {
+		return Config{}, err
+	}
+	authn, err := auth.New(auth.Config{
+		Mode:       os.Getenv("AUTH_MODE"),
+		UsersFile:  os.Getenv("AUTH_USERS_FILE"),
+		SessionKey: os.Getenv("AUTH_SESSION_KEY"),
+		SessionTTL: ttl,
+	})
+	if err != nil {
+		return Config{}, err
+	}
 	return Config{
+		Auth:           authn,
 		Branding:       brand,
 		Port:           getEnv("PORT", "8080"),
 		Services:       svcs,

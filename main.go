@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/stuttgart-things/sthings-portal/internal/auth"
 	"github.com/stuttgart-things/sthings-portal/internal/branding"
 	"github.com/stuttgart-things/sthings-portal/internal/config"
 	"github.com/stuttgart-things/sthings-portal/internal/handlers"
@@ -84,7 +85,7 @@ func main() {
 }
 
 // newMux wires the portal's own routes and one reverse proxy per service.
-func newMux(cfg config.Config, checker *health.Checker, build web.BuildInfo) *http.ServeMux {
+func newMux(cfg config.Config, checker *health.Checker, build web.BuildInfo) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handlers.NewHealthHandler(build))
 
@@ -105,12 +106,20 @@ func newMux(cfg config.Config, checker *health.Checker, build web.BuildInfo) *ht
 	})
 	mux.HandleFunc("GET "+branding.HeaderImagePath, brand.ServeHeaderImage)
 
-	web.New(cfg.Services, checker, build, cfg.HealthInterval, brand).Register(mux)
+	web.New(cfg.Services, checker, build, cfg.HealthInterval, brand).WithAuth(cfg.Auth).Register(mux)
 
 	for _, s := range cfg.Services {
 		// "/led/" matches the whole subtree; "/led" redirects to it.
 		mux.Handle(s.Path()+"/", proxy.New(s))
 		slog.Info("service mounted", "key", s.Key, "path", s.Path()+"/", "url", s.URL.String())
 	}
-	return mux
+	if cfg.Auth != nil {
+		return cfg.Auth.Middleware(mux)
+	}
+	// Without auth nobody is logged in: identity headers a client sends must
+	// not reach the services either.
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		auth.StripIdentity(r)
+		mux.ServeHTTP(rw, r)
+	})
 }

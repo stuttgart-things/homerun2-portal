@@ -164,12 +164,12 @@ func (w *Web) Kiosk(rw http.ResponseWriter, r *http.Request) {
 	render(rw, w.kiosk, "kiosk", kioskPage{
 		kioskOptions:   opts,
 		Status:         status,
-		RefreshSeconds: w.page(nil).RefreshSeconds,
+		RefreshSeconds: w.page(r, nil).RefreshSeconds,
 		Brand:          w.brand,
 	})
 }
 
 // KioskOverview is the overview without the shell, as a kiosk slide.
 func (w *Web) KioskOverview(rw http.ResponseWriter, r *http.Request) {
-	render(rw, w.index, "bare", w.page(nil))
+	render(rw, w.index, "bare", w.page(r, nil))
 }
