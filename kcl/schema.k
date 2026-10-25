@@ -47,6 +47,8 @@ schema Portal:
     #   session-key         at least 32 random bytes (openssl rand -base64 48)
     #   oidc-client-secret  oidc only; leave the key out for a public client
     #                       (PKCE without secret)
+    #   kiosk-token         optional, at least 32 bytes: a kiosk display opens
+    #                       /kiosk?…&kiosk_token=<token> and reads without login
     authMode: str = "none"
     authSecret: str = ""
     authSessionTTL: str = "12h"
@@ -63,6 +65,11 @@ schema Portal:
     authOidcGroupsClaim: str = ""
     authOidcAllowedGroups: [str] = []
     authOidcName: str = "Zitadel"
+    # A provider certificate from a private PKI: an existing ConfigMap with
+    # the CA (PEM) under authOidcCaKey, trusted besides the system CAs, e.g.
+    # kubectl create configmap lab-portal-oidc-ca --from-file=ca.crt
+    authOidcCaConfigMap: str = ""
+    authOidcCaKey: str = "ca.crt"
 
     # How often and how patiently the services' /health is checked
     healthInterval: str = "10s"

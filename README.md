@@ -140,6 +140,8 @@ keeps its full header.
 | `AUTH_OIDC_GROUPS_CLAIM` | `groups`, then Zitadel's roles | `oidc`: list, comma string, or object whose keys are the groups; unset reads `groups` and else `urn:zitadel:iam:org:project:roles` |
 | `AUTH_OIDC_ALLOWED_GROUPS` | *(any)* | `oidc`: comma-separated; only users with one of them get in |
 | `AUTH_OIDC_NAME` | `Zitadel` | `oidc`: label of the login button |
+| `AUTH_OIDC_CA_FILE` | *(none)* | `oidc`: PEM file with CAs to trust for the provider besides the system ones (private PKI) |
+| `AUTH_KIOSK_TOKEN` | *(none)* | At least 32 bytes; lets a kiosk display in read-only (see Kiosk display) |
 
 Known keys get a title: `led` LED Matrix, `core` Core Catcher, `light` Light
 Catcher, `wled` WLED Mock, `pitch` Demo Pitcher, `omni` Omni Pitcher, `notify`
@@ -234,6 +236,35 @@ kubectl -n lab-portal create secret generic lab-portal-auth \
   --from-file=users=./users --from-literal=session-key="$(openssl rand -base64 48)" \
   --from-literal=oidc-client-secret="$(terraform output -raw client_secret)"
 ```
+
+A Zitadel whose certificate comes from a private PKI (the lab's Vault, a
+self-signed issuer) needs its CA, or the login ends in "not reachable" with an
+`x509` error in the log. Put the CA into a ConfigMap and name it in
+`config.authOidcCaConfigMap` (key `config.authOidcCaKey`, default `ca.crt`);
+the portal trusts it besides the system CAs (`AUTH_OIDC_CA_FILE`):
+
+```bash
+kubectl -n lab-portal create configmap lab-portal-oidc-ca --from-file=ca.crt=./vault-pki-ca.pem
+```
+
+### Kiosk display
+
+A box that boots into a browser and rotates `/kiosk` (the edge kiosk of
+`sthings.baseos.kiosk`) cannot log in. With `AUTH_KIOSK_TOKEN` set (KCL: key
+`kiosk-token` in `authSecret`), it opens the kiosk URL with the token once:
+
+```
+https://<portal>/kiosk?services=overview,clusterbook&seconds=30&kiosk_token=<token>
+```
+
+- The portal sets a session for the user **`kiosk`** (group `kiosk`) and
+  redirects to the same URL without the token.
+- The session only **reads**: `GET`/`HEAD`/`OPTIONS`, everything else is `403`
+  — nobody at the display assigns an IP or orders a claim.
+- It renews itself while pages load, so the rotation does not end on the login
+  page; a new token ends all kiosk sessions; a wrong token goes to the login.
+- Works with `local` and `oidc`. The token is a password: keep it out of public
+  kiosk config files (`openssl rand -hex 32`).
 
 ## Endpoints
 

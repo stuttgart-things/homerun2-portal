@@ -31,6 +31,8 @@ configMap = {
             AUTH_OIDC_NAME: config.authOidcName
         if config.authMode == "oidc" and config.authOidcGroupsClaim:
             AUTH_OIDC_GROUPS_CLAIM: config.authOidcGroupsClaim
+        if config.authMode == "oidc" and config.authOidcCaConfigMap:
+            AUTH_OIDC_CA_FILE: "/etc/portal/oidc-ca/{}".format(config.authOidcCaKey)
         if config.authMode == "oidc" and config.authOidcAllowedGroups:
             AUTH_OIDC_ALLOWED_GROUPS: ",".join(config.authOidcAllowedGroups)
         if config.title:

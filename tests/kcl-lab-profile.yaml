@@ -17,6 +17,7 @@ config.headerImageKey: header.svg
 #   config.authOidcIssuer: https://zitadel.<cluster>.sthings-vsphere.<lab>.sva.de
 #   config.authOidcClientId: <terraform output -raw client_id>
 #   config.authOidcAllowedGroups: [portal-user, portal-admin]
+#   config.authOidcCaConfigMap: lab-portal-oidc-ca   # CA of Zitadel's certificate (Vault PKI)
 config.authMode: local
 config.authSecret: lab-portal-auth
 config.services:

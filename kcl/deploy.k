@@ -59,6 +59,17 @@ deployment = {
                                     }
                                 }
                             }
+                            {
+                                name: "AUTH_KIOSK_TOKEN"
+                                valueFrom: {
+                                    secretKeyRef: {
+                                        name: config.authSecret
+                                        key: "kiosk-token"
+                                        # Only with a kiosk display.
+                                        optional: True
+                                    }
+                                }
+                            }
                         ] if config.authMode != "none" else []) + ([
                             {
                                 name: "AUTH_OIDC_CLIENT_SECRET"
@@ -124,7 +135,13 @@ deployment = {
                                     mountPath: "/etc/portal/auth"
                                     readOnly: True
                                 }
-                            ] if config.authMode != "none" else [])
+                            ] if config.authMode != "none" else []) + ([
+                                {
+                                    name: "oidc-ca"
+                                    mountPath: "/etc/portal/oidc-ca"
+                                    readOnly: True
+                                }
+                            ] if config.authMode == "oidc" and config.authOidcCaConfigMap else [])
                         securityContext: {
                             readOnlyRootFilesystem: True
                             runAsNonRoot: True
@@ -151,7 +168,15 @@ deployment = {
                                 items: [{key: "users", path: "users"}]
                             }
                         }
-                    ] if config.authMode != "none" else [])
+                    ] if config.authMode != "none" else []) + ([
+                        {
+                            name: "oidc-ca"
+                            configMap: {
+                                name: config.authOidcCaConfigMap
+                                items: [{key: config.authOidcCaKey, path: config.authOidcCaKey}]
+                            }
+                        }
+                    ] if config.authMode == "oidc" and config.authOidcCaConfigMap else [])
                 securityContext: {
                     runAsNonRoot: True
                     runAsUser: 65532
