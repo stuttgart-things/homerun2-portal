@@ -50,6 +50,9 @@ type Config struct {
 	SessionTTL time.Duration
 	// OIDC is used with AUTH_MODE=oidc.
 	OIDC OIDCConfig
+	// KioskToken, if set, logs in a kiosk display that opens any portal
+	// URL with ?kiosk_token=<token> (read-only, see kiosk.go).
+	KioskToken string
 }
 
 // User is one entry of the users file.
@@ -70,6 +73,8 @@ type Auth struct {
 	now   func() time.Time
 	// oidc is set with AUTH_MODE=oidc.
 	oidc *oidcClient
+	// kioskToken is AUTH_KIOSK_TOKEN ("" for no kiosk access).
+	kioskToken string
 }
 
 // New builds the authenticator; nil (and no error) for AUTH_MODE=none.
@@ -89,7 +94,11 @@ func New(cfg Config) (*Auth, error) {
 	if cfg.SessionTTL <= 0 {
 		cfg.SessionTTL = 12 * time.Hour
 	}
-	a := &Auth{users: map[string]User{}, key: []byte(cfg.SessionKey), ttl: cfg.SessionTTL, now: time.Now}
+	if cfg.KioskToken != "" && len(cfg.KioskToken) < MinSessionKey {
+		return nil, fmt.Errorf("AUTH_KIOSK_TOKEN: at least %d bytes needed, got %d", MinSessionKey, len(cfg.KioskToken))
+	}
+	a := &Auth{users: map[string]User{}, key: []byte(cfg.SessionKey), ttl: cfg.SessionTTL, now: time.Now,
+		kioskToken: cfg.KioskToken}
 	if mode == ModeOIDC {
 		c, err := newOIDCClient(cfg.OIDC)
 		if err != nil {
@@ -184,6 +193,7 @@ func (a *Auth) Check(name, password string) (User, bool) {
 const (
 	SourceLocal = "local"
 	SourceOIDC  = "oidc"
+	SourceKiosk = "kiosk"
 )
 
 // session is the signed cookie's content.
@@ -191,8 +201,11 @@ type session struct {
 	User   string   `json:"u"`
 	Groups []string `json:"g,omitempty"`
 	Exp    int64    `json:"e"`
-	// Src is SourceOIDC for an OIDC login, empty for a local one.
+	// Src is SourceOIDC or SourceKiosk, empty for a local login.
 	Src string `json:"s,omitempty"`
+	// Kiosk is the fingerprint of the kiosk token a kiosk session was
+	// opened with; a new token ends the old sessions.
+	Kiosk string `json:"k,omitempty"`
 }
 
 // CookieName is the session cookie.
@@ -250,6 +263,10 @@ func (a *Auth) verify(value string) (session, bool) {
 		}
 	case SourceOIDC:
 		if a.oidc == nil {
+			return session{}, false
+		}
+	case SourceKiosk:
+		if a.kioskToken == "" || s.Kiosk != a.kioskFingerprint() {
 			return session{}, false
 		}
 	default:

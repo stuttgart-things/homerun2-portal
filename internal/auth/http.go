@@ -34,6 +34,10 @@ func StripIdentity(r *http.Request) {
 func (a *Auth) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		StripIdentity(r)
+		if r.URL.Query().Has(KioskTokenParam) {
+			a.kioskLogin(w, r)
+			return
+		}
 		if public(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
@@ -46,6 +50,9 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		}
 		if !ok {
 			a.unauthorized(w, r)
+			return
+		}
+		if s.Src == SourceKiosk && !a.kioskAllowed(w, r, s) {
 			return
 		}
 		r.Header.Set(HeaderUser, s.User)

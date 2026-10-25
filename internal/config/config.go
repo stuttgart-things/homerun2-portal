@@ -65,6 +65,7 @@ func Load() (Config, error) {
 			AllowedGroups: list(os.Getenv("AUTH_OIDC_ALLOWED_GROUPS"), ","),
 			Name:          strings.TrimSpace(os.Getenv("AUTH_OIDC_NAME")),
 		},
+		KioskToken: os.Getenv("AUTH_KIOSK_TOKEN"),
 	})
 	if err != nil {
 		return Config{}, err

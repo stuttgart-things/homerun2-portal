@@ -318,3 +318,54 @@ func TestMuxOIDCEmergencyAccess(t *testing.T) {
 		t.Errorf("after emergency login the service got %s", body)
 	}
 }
+
+// TestMuxKiosk: a display opens /kiosk with the kiosk token once and then
+// shows the kiosk and the services read-only, as user kiosk.
+func TestMuxKiosk(t *testing.T) {
+	h, err := auth.HashPassword("secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	users := filepath.Join(t.TempDir(), "users")
+	if err := os.WriteFile(users, []byte("alice:"+h+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	token := strings.Repeat("t", 40)
+	a, err := auth.New(auth.Config{Mode: "local", UsersFile: users, SessionKey: strings.Repeat("k", 32), KioskToken: token})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svcs := identityService(t)
+	cfg := config.Config{Services: svcs, HealthInterval: time.Second, HealthTimeout: time.Second, Auth: a}
+	portal := httptest.NewServer(newMux(cfg, health.NewChecker(svcs, time.Second), web.BuildInfo{}))
+	defer portal.Close()
+
+	jar, _ := cookiejar.New(nil)
+	client := &http.Client{Jar: jar}
+	resp, err := client.Get(portal.URL + "/kiosk?services=overview,led&seconds=20&kiosk_token=" + token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK || resp.Request.URL.Path != "/kiosk" || strings.Contains(resp.Request.URL.RawQuery, "kiosk_token") {
+		t.Fatalf("kiosk: ended at %s with %d", resp.Request.URL, resp.StatusCode)
+	}
+
+	resp, err = client.Get(portal.URL + "/led/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if string(body) != `user="kiosk" groups="kiosk"` {
+		t.Errorf("service got %s, want the kiosk identity", body)
+	}
+	resp, err = client.Post(portal.URL+"/led/api", "application/json", strings.NewReader("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("POST as kiosk: %d, want 403", resp.StatusCode)
+	}
+}

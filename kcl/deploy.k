@@ -59,6 +59,17 @@ deployment = {
                                     }
                                 }
                             }
+                            {
+                                name: "AUTH_KIOSK_TOKEN"
+                                valueFrom: {
+                                    secretKeyRef: {
+                                        name: config.authSecret
+                                        key: "kiosk-token"
+                                        # Only with a kiosk display.
+                                        optional: True
+                                    }
+                                }
+                            }
                         ] if config.authMode != "none" else []) + ([
                             {
                                 name: "AUTH_OIDC_CLIENT_SECRET"
