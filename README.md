@@ -128,6 +128,7 @@ keeps its full header.
 | `PORTAL_TITLE` | *(theme's)* | Header text, also the page title |
 | `PORTAL_SUBTITLE` | *(theme's)* | Small line under the header text |
 | `PORTAL_HEADER_IMAGE` | *(none)* | Path to a header graphic (`.svg`, `.png`, `.jpg`, `.webp`, at most 1 MiB) shown instead of the text |
+| `PORTAL_FAVICON` | *(theme's)* | Path to a favicon (`.svg`, `.png`, `.ico`, at most 1 MiB); without it a built-in icon in the theme's accent colour |
 | `AUTH_MODE` | `none` | `none` (open, as before), `local` or `oidc` (login, see Authentication) |
 | `AUTH_USERS_FILE` | *(none)* | Users file: `name:bcrypt-hash[:group,group]` per line; required for `local`, the emergency access for `oidc` |
 | `AUTH_SESSION_KEY` | *(none)* | At least 32 bytes; signs the session cookie |
@@ -172,8 +173,25 @@ ConfigMap (KCL `config.headerImageConfigMap`, `config.headerImageKey`):
 kubectl -n lab-portal create configmap lab-portal-branding --from-file=header.svg
 ```
 
+Every theme has a favicon: a small SVG in its accent colour, built into the
+portal. `PORTAL_FAVICON` replaces it with a file (`.svg`, `.png` or `.ico`,
+at most 1 MiB). The portal serves it **without login** at `/branding/favicon`
+(linked from every page, the login included) and at `/favicon.ico`, where
+browsers look on their own, with the file's Content-Type and
+`Cache-Control: public, max-age=3600`. In Kubernetes it comes from a ConfigMap
+too (KCL `config.faviconConfigMap`, `config.faviconKey`, default
+`favicon.svg`), mounted at `/etc/portal/favicon/`:
+
+```bash
+kubectl -n lab-portal create configmap lab-portal-favicon --from-file=favicon.svg
+# or a .png/.ico (kubectl puts it under binaryData), then config.faviconKey: favicon.ico
+```
+
+Like the header graphic, a missing file or another type keeps the pod from
+starting.
+
 `docs/branding/lab-header.svg` is an example; `tests/kcl-lab-profile.yaml`
-renders the lab instance with it. A new theme is a new entry in
+renders the lab instance with it and a favicon. A new theme is a new entry in
 `internal/branding` and its files under `static/themes/`.
 
 ## Authentication
@@ -191,7 +209,8 @@ kubectl -n lab-portal create secret generic lab-portal-auth \
 
 (KCL: `config.authMode: local`, `config.authSecret: lab-portal-auth`.)
 
-- Everything but `/health`, `/static/`, `/branding/header` and the login needs a
+- Everything but `/health`, `/static/`, `/branding/header`, `/branding/favicon`,
+  `/favicon.ico` and the login needs a
   session: a page is redirected to `/auth/login?next=…` and back, an htmx
   request gets `HX-Redirect`, anything else `401`.
 - The session is a signed (`HMAC-SHA256`), `HttpOnly`, `SameSite=Lax` cookie,
@@ -279,6 +298,7 @@ https://<portal>/kiosk?services=overview,clusterbook&seconds=30&kiosk_token=<tok
 | `/health` | The portal's own health and build info |
 | `/static/homerun2.css` | Portal layout and fragment classes |
 | `/static/homerun2-tokens.css` | Design tokens only, for the service UIs |
+| `/branding/header`, `/branding/favicon`, `/favicon.ico` | Header graphic, favicon (public) |
 | `/<key>/…` | Proxied to the service |
 
 ## Kiosk

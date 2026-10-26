@@ -41,7 +41,7 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 	brand, err := branding.Load(os.Getenv("PORTAL_THEME"), os.Getenv("PORTAL_TITLE"),
-		os.Getenv("PORTAL_SUBTITLE"), os.Getenv("PORTAL_HEADER_IMAGE"))
+		os.Getenv("PORTAL_SUBTITLE"), os.Getenv("PORTAL_HEADER_IMAGE"), os.Getenv("PORTAL_FAVICON"))
 	if err != nil {
 		return Config{}, err
 	}

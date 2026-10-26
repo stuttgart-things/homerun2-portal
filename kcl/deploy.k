@@ -122,7 +122,7 @@ deployment = {
                             timeoutSeconds: 3
                             failureThreshold: 3
                         }
-                        if config.headerImageConfigMap or config.authMode != "none":
+                        if config.headerImageConfigMap or config.faviconConfigMap or config.authMode != "none":
                             volumeMounts: ([
                                 {
                                     name: "branding"
@@ -130,6 +130,12 @@ deployment = {
                                     readOnly: True
                                 }
                             ] if config.headerImageConfigMap else []) + ([
+                                {
+                                    name: "favicon"
+                                    mountPath: "/etc/portal/favicon"
+                                    readOnly: True
+                                }
+                            ] if config.faviconConfigMap else []) + ([
                                 {
                                     name: "auth"
                                     mountPath: "/etc/portal/auth"
@@ -152,7 +158,7 @@ deployment = {
                         }
                     }
                 ]
-                if config.headerImageConfigMap or config.authMode != "none":
+                if config.headerImageConfigMap or config.faviconConfigMap or config.authMode != "none":
                     volumes: ([
                         {
                             name: "branding"
@@ -161,6 +167,14 @@ deployment = {
                             }
                         }
                     ] if config.headerImageConfigMap else []) + ([
+                        {
+                            name: "favicon"
+                            configMap: {
+                                name: config.faviconConfigMap
+                                items: [{key: config.faviconKey, path: config.faviconKey}]
+                            }
+                        }
+                    ] if config.faviconConfigMap else []) + ([
                         {
                             name: "auth"
                             secret: {

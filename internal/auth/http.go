@@ -14,11 +14,13 @@ const (
 	LogoutPath = "/auth/logout"
 )
 
-// public paths need no login: the portal's own health, its static files
-// (the login page uses them) and the login itself.
+// public paths need no login: the portal's own health, its static files and
+// branding (the login page uses them; a browser asks for /favicon.ico on its
+// own) and the login itself.
 func public(path string) bool {
 	return path == "/health" || path == LoginPath || path == OIDCStartPath || path == CallbackPath ||
-		path == "/branding/header" || strings.HasPrefix(path, "/static/")
+		path == "/branding/header" || path == "/branding/favicon" || path == "/favicon.ico" ||
+		strings.HasPrefix(path, "/static/")
 }
 
 // StripIdentity removes identity headers a client sent; only the portal sets

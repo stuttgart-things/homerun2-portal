@@ -43,12 +43,13 @@
 
 {{define "status"}}{{range .}}<a class="hr-pill" href="/ui/{{.Key}}" title="{{if .Error}}{{.Error}}{{else if .Checked}}up{{else}}not checked yet{{end}}"><span class="hr-dot{{if .Checked}}{{if .Up}} up{{else}} down{{end}}{{end}}"></span>{{.Title}}</a>{{end}}{{end}}
 
-{{/* The deployment's look (internal/branding): the theme's font and
-     stylesheet, and the header graphic or the theme's text. */}}
+{{/* The deployment's look (internal/branding): the theme's font, the
+     favicon and stylesheet, and the header graphic or the theme's text. */}}
 {{define "brand-head"}}{{if .PixelFont}}    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-{{end}}    <link rel="stylesheet" href="/static/homerun2.css">
+{{end}}    <link rel="icon" href="/branding/favicon" type="{{.FaviconType}}">
+    <link rel="stylesheet" href="/static/homerun2.css">
 {{with .Stylesheet}}    <link rel="stylesheet" href="/static/{{.}}">
 {{end}}{{end}}
 

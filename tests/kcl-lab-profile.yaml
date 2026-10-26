@@ -9,6 +9,11 @@ config.theme: machinery
 config.subtitle: LAB PORTAL
 config.headerImageConfigMap: lab-portal-branding
 config.headerImageKey: header.svg
+# The favicon from its own ConfigMap
+# (kubectl -n lab-portal create configmap lab-portal-favicon --from-file=favicon.svg);
+# without it the machinery theme's built-in icon is served.
+config.faviconConfigMap: lab-portal-favicon
+config.faviconKey: favicon.svg
 # Login with local users (kubectl -n lab-portal create secret generic
 # lab-portal-auth --from-file=users=./users --from-literal=session-key="$(openssl rand -base64 48)").
 # For Zitadel switch to oidc and add the key oidc-client-secret to the same

@@ -95,17 +95,26 @@ func TestThemeFilesExist(t *testing.T) {
 				t.Errorf("theme %s: %v", name, err)
 			}
 		}
+		// The built-in favicon's colour is the palette's accent.
+		tokens, err := fs.ReadFile(staticFS, "static/"+theme.Tokens)
+		if err != nil || !strings.Contains(string(tokens), "--hr-accent: "+theme.Accent+";") {
+			t.Errorf("theme %s: Accent %q is not the --hr-accent of %s", name, theme.Accent, theme.Tokens)
+		}
 	}
 }
 
 // TestMuxBranding: the theme's palette is what the service UIs get as
-// /static/homerun2-tokens.css, and the header graphic is served.
+// /static/homerun2-tokens.css, and the header graphic and favicon are served.
 func TestMuxBranding(t *testing.T) {
 	img := filepath.Join(t.TempDir(), "lab.svg")
 	if err := os.WriteFile(img, []byte(`<svg xmlns="http://www.w3.org/2000/svg"/>`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	brand, err := branding.Load("machinery", "", "", img)
+	icon := filepath.Join(t.TempDir(), "favicon.png")
+	if err := os.WriteFile(icon, []byte("png-icon"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	brand, err := branding.Load("machinery", "", "", img, icon)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,6 +128,8 @@ func TestMuxBranding(t *testing.T) {
 		"/branding/header":             "<svg",
 		"/":                            `<img src="/branding/header" alt="machinery">`,
 		"/kiosk":                       `<img src="/branding/header" alt="machinery">`,
+		"/branding/favicon":            "png-icon",
+		"/favicon.ico":                 "png-icon",
 	} {
 		resp, err := http.Get(portal.URL + path)
 		if err != nil {
@@ -128,6 +139,12 @@ func TestMuxBranding(t *testing.T) {
 		_ = resp.Body.Close()
 		if resp.StatusCode != http.StatusOK || !strings.Contains(string(body), want) {
 			t.Errorf("GET %s = %d, body lacks %q", path, resp.StatusCode, want)
+		}
+		if strings.Contains(path, "favicon") && resp.Header.Get("Content-Type") != "image/png" {
+			t.Errorf("GET %s: Content-Type %q, want image/png", path, resp.Header.Get("Content-Type"))
+		}
+		if (path == "/" || path == "/kiosk") && !strings.Contains(string(body), `<link rel="icon" href="/branding/favicon" type="image/png">`) {
+			t.Errorf("GET %s lacks the favicon link", path)
 		}
 	}
 }
@@ -188,10 +205,13 @@ func TestMuxAuth(t *testing.T) {
 	}
 
 	// Public without a session; everything else sends a browser to the login.
-	for _, path := range []string{"/health", "/static/homerun2.css"} {
+	for _, path := range []string{"/health", "/static/homerun2.css", "/branding/favicon", "/favicon.ico"} {
 		if code, _ := get(path); code != http.StatusOK {
 			t.Errorf("GET %s without session: %d", path, code)
 		}
+	}
+	if code, body := get("/auth/login"); code != http.StatusOK || !strings.Contains(body, `<link rel="icon" href="/branding/favicon" type="image/svg&#43;xml">`) {
+		t.Errorf("login page: %d, want the favicon link", code)
 	}
 	if code, body := get("/ui/led", "Accept", "text/html"); code != http.StatusOK || !strings.Contains(body, `name="next" value="/ui/led"`) {
 		t.Errorf("GET /ui/led without session: %d, want the login form returning to /ui/led", code)

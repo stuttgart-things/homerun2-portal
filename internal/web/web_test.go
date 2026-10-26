@@ -183,7 +183,7 @@ func TestNavigationTakesTheManifestTitle(t *testing.T) {
 
 func TestBrandingInPages(t *testing.T) {
 	mux := http.NewServeMux()
-	brand, err := branding.Load("machinery", "Lab", "LABUL", "")
+	brand, err := branding.Load("machinery", "Lab", "LABUL", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
