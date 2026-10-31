@@ -33,6 +33,8 @@ _title = option("config.title")
 _subtitle = option("config.subtitle")
 _headerImageConfigMap = option("config.headerImageConfigMap")
 _headerImageKey = option("config.headerImageKey")
+_faviconConfigMap = option("config.faviconConfigMap")
+_faviconKey = option("config.faviconKey")
 
 # Config instance with command-line overrides
 config: schema.Portal = schema.Portal {
@@ -70,6 +72,10 @@ config: schema.Portal = schema.Portal {
         headerImageConfigMap = _headerImageConfigMap
     if _headerImageKey:
         headerImageKey = _headerImageKey
+    if _faviconConfigMap:
+        faviconConfigMap = _faviconConfigMap
+    if _faviconKey:
+        faviconKey = _faviconKey
     if _image:
         image = _image
     if _namespace:

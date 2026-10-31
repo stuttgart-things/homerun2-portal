@@ -165,7 +165,7 @@ func TestMiddleware(t *testing.T) {
 		return w
 	}
 
-	for _, path := range []string{"/health", "/static/homerun2.css", "/auth/login", "/branding/header"} {
+	for _, path := range []string{"/health", "/static/homerun2.css", "/auth/login", "/branding/header", "/branding/favicon", "/favicon.ico"} {
 		req := httptest.NewRequest("GET", path, nil)
 		req.Header.Set(HeaderUser, "spoofed")
 		if w := do(req); w.Code != 200 || w.Body.String() != "|" {

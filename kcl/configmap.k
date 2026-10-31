@@ -41,6 +41,8 @@ configMap = {
             PORTAL_SUBTITLE: config.subtitle
         if config.headerImageConfigMap:
             PORTAL_HEADER_IMAGE: "/etc/portal/branding/{}".format(config.headerImageKey)
+        if config.faviconConfigMap:
+            PORTAL_FAVICON: "/etc/portal/favicon/{}".format(config.faviconKey)
         **config.extraEnvVars
     }
 }

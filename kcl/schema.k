@@ -38,6 +38,13 @@ schema Portal:
     # e.g. kubectl create configmap lab-portal-branding --from-file=header.svg
     headerImageConfigMap: str = ""
     headerImageKey: str = "header.svg"
+    # Favicon instead of the theme's built-in one (the accent colour): an
+    # existing ConfigMap holding the icon (.svg, .png or .ico, at most 1 MiB)
+    # under faviconKey, e.g.
+    # kubectl create configmap lab-portal-favicon --from-file=favicon.svg
+    # (a binary .png/.ico lands in binaryData; the mount reads both)
+    faviconConfigMap: str = ""
+    faviconKey: str = "favicon.svg"
 
     # Login in front of the portal (#24): "none", "local" or "oidc". Both
     # need an existing Secret authSecret with the keys:

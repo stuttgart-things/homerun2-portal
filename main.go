@@ -105,6 +105,9 @@ func newMux(cfg config.Config, checker *health.Checker, build web.BuildInfo) htt
 		http.ServeFileFS(rw, r, staticSub, brand.Tokens)
 	})
 	mux.HandleFunc("GET "+branding.HeaderImagePath, brand.ServeHeaderImage)
+	// The favicon under its own path and where browsers look for it unasked.
+	mux.HandleFunc("GET "+branding.FaviconPath, brand.ServeFavicon)
+	mux.HandleFunc("GET /favicon.ico", brand.ServeFavicon)
 
 	web.New(cfg.Services, checker, build, cfg.HealthInterval, brand).WithAuth(cfg.Auth).Register(mux)
 
